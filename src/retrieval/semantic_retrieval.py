@@ -72,7 +72,11 @@ class SemanticRetrieval:
         table_names = []
 
         for table_name, schema in self.schemas.items():
-            description = get_table_description(table_name, schema)
+            description = get_table_description(
+                table_name,
+                schema,
+                embedding_model=self.embedding_model_name
+            )
             self.table_descriptions[table_name] = description
             descriptions.append(description)
             table_names.append(table_name)
