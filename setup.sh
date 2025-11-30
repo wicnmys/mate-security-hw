@@ -27,29 +27,62 @@ if [ -d ".venv" ]; then
     echo
     if [[ $REPLY =~ ^[Yy]$ ]]; then
         rm -rf .venv
-        python3 -m venv .venv
+    else
+        # Skip creation if user chose not to recreate
+        echo "Using existing virtual environment"
+        source .venv/bin/activate
+        # Skip to dependency installation
+        if [ $? -eq 0 ]; then
+            echo "✓ Virtual environment activated"
+            echo ""
+            echo "Upgrading pip..."
+            pip install --upgrade pip -q
+            echo "Installing dependencies..."
+            pip install -r requirements-dev.txt -q
+            echo "✓ Dependencies installed"
+            echo ""
+            # Continue with rest of script
+            SKIP_VENV_CREATION=1
+        fi
     fi
-else
-    python3 -m venv .venv
 fi
 
-echo "✓ Virtual environment created"
-echo ""
+if [ -z "$SKIP_VENV_CREATION" ]; then
+    # Try using built-in venv first
+    echo "Attempting to create virtual environment with venv..."
+    if python3 -m venv .venv 2>/dev/null; then
+        echo "✓ Virtual environment created with venv"
+    else
+        echo "⚠️  Built-in venv failed, trying virtualenv..."
 
-# Activate virtual environment
-echo "Activating virtual environment..."
-source .venv/bin/activate
+        # Check if virtualenv is installed
+        if ! command -v virtualenv &> /dev/null; then
+            echo "Installing virtualenv..."
+            pip3 install virtualenv
+        fi
 
-# Upgrade pip
-echo "Upgrading pip..."
-pip install --upgrade pip -q
+        # Create venv with virtualenv
+        virtualenv .venv
+        echo "✓ Virtual environment created with virtualenv"
+    fi
 
-# Install dependencies
-echo "Installing dependencies..."
-pip install -r requirements-dev.txt -q
+    echo ""
 
-echo "✓ Dependencies installed"
-echo ""
+    # Activate virtual environment
+    echo "Activating virtual environment..."
+    source .venv/bin/activate
+
+    # Upgrade pip
+    echo "Upgrading pip..."
+    pip install --upgrade pip -q
+
+    # Install dependencies
+    echo "Installing dependencies..."
+    pip install -r requirements-dev.txt -q
+
+    echo "✓ Dependencies installed"
+    echo ""
+fi
 
 # Check for API keys
 echo "Checking environment variables..."
