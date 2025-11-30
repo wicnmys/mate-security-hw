@@ -1,0 +1,2134 @@
+{
+    "endpoint_events": {
+        "category": "endpoint",
+        "description": "Core endpoint security events from EDR/EPP solutions",
+        "fields": [
+            {
+                "name": "event_id",
+                "type": "VARCHAR(64)",
+                "description": "Unique event identifier"
+            },
+            {
+                "name": "timestamp",
+                "type": "TIMESTAMP",
+                "description": "Event occurrence time"
+            },
+            {
+                "name": "event_type",
+                "type": "VARCHAR(50)",
+                "description": "Type of endpoint event (process, file, registry, network)"
+            },
+            {
+                "name": "severity",
+                "type": "VARCHAR(20)",
+                "description": "Severity level (critical, high, medium, low, info)"
+            },
+            {
+                "name": "hostname",
+                "type": "VARCHAR(255)",
+                "description": "Endpoint hostname"
+            },
+            {
+                "name": "ip_address",
+                "type": "VARCHAR(45)",
+                "description": "Endpoint IP address"
+            },
+            {
+                "name": "mac_address",
+                "type": "VARCHAR(17)",
+                "description": "MAC address"
+            },
+            {
+                "name": "os_type",
+                "type": "VARCHAR(50)",
+                "description": "Operating system type"
+            },
+            {
+                "name": "os_version",
+                "type": "VARCHAR(100)",
+                "description": "Operating system version"
+            },
+            {
+                "name": "agent_version",
+                "type": "VARCHAR(50)",
+                "description": "Security agent version"
+            },
+            {
+                "name": "user_name",
+                "type": "VARCHAR(255)",
+                "description": "Username associated with event"
+            },
+            {
+                "name": "user_domain",
+                "type": "VARCHAR(255)",
+                "description": "User domain"
+            },
+            {
+                "name": "process_name",
+                "type": "VARCHAR(500)",
+                "description": "Process name"
+            },
+            {
+                "name": "process_id",
+                "type": "INTEGER",
+                "description": "Process ID"
+            },
+            {
+                "name": "parent_process_name",
+                "type": "VARCHAR(500)",
+                "description": "Parent process name"
+            },
+            {
+                "name": "parent_process_id",
+                "type": "INTEGER",
+                "description": "Parent process ID"
+            },
+            {
+                "name": "command_line",
+                "type": "TEXT",
+                "description": "Full command line"
+            },
+            {
+                "name": "file_path",
+                "type": "TEXT",
+                "description": "File path involved"
+            },
+            {
+                "name": "file_hash_md5",
+                "type": "VARCHAR(32)",
+                "description": "MD5 hash of file"
+            },
+            {
+                "name": "file_hash_sha256",
+                "type": "VARCHAR(64)",
+                "description": "SHA256 hash of file"
+            },
+            {
+                "name": "threat_name",
+                "type": "VARCHAR(255)",
+                "description": "Identified threat name"
+            },
+            {
+                "name": "threat_category",
+                "type": "VARCHAR(100)",
+                "description": "Threat category"
+            },
+            {
+                "name": "action_taken",
+                "type": "VARCHAR(100)",
+                "description": "Action taken by security system"
+            },
+            {
+                "name": "event_source",
+                "type": "VARCHAR(100)",
+                "description": "Source system generating event"
+            },
+            {
+                "name": "raw_event",
+                "type": "TEXT",
+                "description": "Raw event data"
+            }
+        ]
+    },
+    "process_execution": {
+        "category": "endpoint",
+        "description": "Detailed process execution telemetry",
+        "fields": [
+            {
+                "name": "event_id",
+                "type": "VARCHAR(64)",
+                "description": "Unique event identifier"
+            },
+            {
+                "name": "timestamp",
+                "type": "TIMESTAMP",
+                "description": "Process start time"
+            },
+            {
+                "name": "hostname",
+                "type": "VARCHAR(255)",
+                "description": "Host where process executed"
+            },
+            {
+                "name": "process_guid",
+                "type": "VARCHAR(64)",
+                "description": "Global process identifier"
+            },
+            {
+                "name": "process_name",
+                "type": "VARCHAR(500)",
+                "description": "Process executable name"
+            },
+            {
+                "name": "process_id",
+                "type": "INTEGER",
+                "description": "Process ID"
+            },
+            {
+                "name": "process_path",
+                "type": "TEXT",
+                "description": "Full path to executable"
+            },
+            {
+                "name": "command_line",
+                "type": "TEXT",
+                "description": "Command line arguments"
+            },
+            {
+                "name": "parent_process_guid",
+                "type": "VARCHAR(64)",
+                "description": "Parent process GUID"
+            },
+            {
+                "name": "parent_process_name",
+                "type": "VARCHAR(500)",
+                "description": "Parent process name"
+            },
+            {
+                "name": "parent_process_id",
+                "type": "INTEGER",
+                "description": "Parent process ID"
+            },
+            {
+                "name": "parent_command_line",
+                "type": "TEXT",
+                "description": "Parent command line"
+            },
+            {
+                "name": "user_name",
+                "type": "VARCHAR(255)",
+                "description": "Executing user"
+            },
+            {
+                "name": "user_sid",
+                "type": "VARCHAR(255)",
+                "description": "User SID"
+            },
+            {
+                "name": "integrity_level",
+                "type": "VARCHAR(50)",
+                "description": "Process integrity level"
+            },
+            {
+                "name": "current_directory",
+                "type": "TEXT",
+                "description": "Working directory"
+            },
+            {
+                "name": "file_version",
+                "type": "VARCHAR(100)",
+                "description": "Executable file version"
+            },
+            {
+                "name": "file_description",
+                "type": "TEXT",
+                "description": "File description"
+            },
+            {
+                "name": "product_name",
+                "type": "VARCHAR(255)",
+                "description": "Product name"
+            },
+            {
+                "name": "company_name",
+                "type": "VARCHAR(255)",
+                "description": "Company name"
+            },
+            {
+                "name": "signed",
+                "type": "BOOLEAN",
+                "description": "Digital signature status"
+            },
+            {
+                "name": "signature_valid",
+                "type": "BOOLEAN",
+                "description": "Signature validity"
+            },
+            {
+                "name": "signer",
+                "type": "VARCHAR(255)",
+                "description": "Code signer"
+            }
+        ]
+    },
+    "file_events": {
+        "category": "endpoint",
+        "description": "File system activity monitoring",
+        "fields": [
+            {
+                "name": "event_id",
+                "type": "VARCHAR(64)",
+                "description": "Unique event identifier"
+            },
+            {
+                "name": "timestamp",
+                "type": "TIMESTAMP",
+                "description": "Event time"
+            },
+            {
+                "name": "hostname",
+                "type": "VARCHAR(255)",
+                "description": "Host where event occurred"
+            },
+            {
+                "name": "event_type",
+                "type": "VARCHAR(50)",
+                "description": "File operation (create, modify, delete, rename, copy)"
+            },
+            {
+                "name": "file_path",
+                "type": "TEXT",
+                "description": "Full file path"
+            },
+            {
+                "name": "file_name",
+                "type": "VARCHAR(500)",
+                "description": "File name"
+            },
+            {
+                "name": "file_extension",
+                "type": "VARCHAR(50)",
+                "description": "File extension"
+            },
+            {
+                "name": "file_size",
+                "type": "BIGINT",
+                "description": "File size in bytes"
+            },
+            {
+                "name": "file_hash_md5",
+                "type": "VARCHAR(32)",
+                "description": "MD5 hash"
+            },
+            {
+                "name": "file_hash_sha256",
+                "type": "VARCHAR(64)",
+                "description": "SHA256 hash"
+            },
+            {
+                "name": "previous_file_path",
+                "type": "TEXT",
+                "description": "Previous path for rename/move"
+            },
+            {
+                "name": "process_name",
+                "type": "VARCHAR(500)",
+                "description": "Process performing operation"
+            },
+            {
+                "name": "process_id",
+                "type": "INTEGER",
+                "description": "Process ID"
+            },
+            {
+                "name": "user_name",
+                "type": "VARCHAR(255)",
+                "description": "User performing operation"
+            },
+            {
+                "name": "target_is_directory",
+                "type": "BOOLEAN",
+                "description": "Whether target is directory"
+            },
+            {
+                "name": "access_mask",
+                "type": "VARCHAR(50)",
+                "description": "Access permissions requested"
+            }
+        ]
+    },
+    "registry_events": {
+        "category": "endpoint",
+        "description": "Windows registry modifications",
+        "fields": [
+            {
+                "name": "event_id",
+                "type": "VARCHAR(64)",
+                "description": "Unique event identifier"
+            },
+            {
+                "name": "timestamp",
+                "type": "TIMESTAMP",
+                "description": "Event time"
+            },
+            {
+                "name": "hostname",
+                "type": "VARCHAR(255)",
+                "description": "Host where event occurred"
+            },
+            {
+                "name": "event_type",
+                "type": "VARCHAR(50)",
+                "description": "Registry operation (create, modify, delete, rename)"
+            },
+            {
+                "name": "registry_path",
+                "type": "TEXT",
+                "description": "Full registry path"
+            },
+            {
+                "name": "registry_key",
+                "type": "TEXT",
+                "description": "Registry key"
+            },
+            {
+                "name": "registry_value_name",
+                "type": "VARCHAR(500)",
+                "description": "Value name"
+            },
+            {
+                "name": "registry_value_type",
+                "type": "VARCHAR(50)",
+                "description": "Value type (REG_SZ, REG_DWORD, etc.)"
+            },
+            {
+                "name": "registry_value_data",
+                "type": "TEXT",
+                "description": "Value data"
+            },
+            {
+                "name": "process_name",
+                "type": "VARCHAR(500)",
+                "description": "Process performing operation"
+            },
+            {
+                "name": "process_id",
+                "type": "INTEGER",
+                "description": "Process ID"
+            },
+            {
+                "name": "user_name",
+                "type": "VARCHAR(255)",
+                "description": "User performing operation"
+            }
+        ]
+    },
+    "network_traffic": {
+        "category": "network",
+        "description": "Network traffic flows and connections",
+        "fields": [
+            {
+                "name": "flow_id",
+                "type": "VARCHAR(64)",
+                "description": "Unique flow identifier"
+            },
+            {
+                "name": "timestamp",
+                "type": "TIMESTAMP",
+                "description": "Flow start time"
+            },
+            {
+                "name": "end_timestamp",
+                "type": "TIMESTAMP",
+                "description": "Flow end time"
+            },
+            {
+                "name": "duration",
+                "type": "INTEGER",
+                "description": "Flow duration in milliseconds"
+            },
+            {
+                "name": "protocol",
+                "type": "VARCHAR(20)",
+                "description": "Protocol (TCP, UDP, ICMP)"
+            },
+            {
+                "name": "source_ip",
+                "type": "VARCHAR(45)",
+                "description": "Source IP address"
+            },
+            {
+                "name": "source_port",
+                "type": "INTEGER",
+                "description": "Source port"
+            },
+            {
+                "name": "source_hostname",
+                "type": "VARCHAR(255)",
+                "description": "Source hostname"
+            },
+            {
+                "name": "source_mac",
+                "type": "VARCHAR(17)",
+                "description": "Source MAC address"
+            },
+            {
+                "name": "destination_ip",
+                "type": "VARCHAR(45)",
+                "description": "Destination IP address"
+            },
+            {
+                "name": "destination_port",
+                "type": "INTEGER",
+                "description": "Destination port"
+            },
+            {
+                "name": "destination_hostname",
+                "type": "VARCHAR(255)",
+                "description": "Destination hostname"
+            },
+            {
+                "name": "destination_mac",
+                "type": "VARCHAR(17)",
+                "description": "Destination MAC address"
+            },
+            {
+                "name": "bytes_sent",
+                "type": "BIGINT",
+                "description": "Bytes sent"
+            },
+            {
+                "name": "bytes_received",
+                "type": "BIGINT",
+                "description": "Bytes received"
+            },
+            {
+                "name": "packets_sent",
+                "type": "INTEGER",
+                "description": "Packets sent"
+            },
+            {
+                "name": "packets_received",
+                "type": "INTEGER",
+                "description": "Packets received"
+            },
+            {
+                "name": "direction",
+                "type": "VARCHAR(20)",
+                "description": "Traffic direction (inbound, outbound, internal)"
+            },
+            {
+                "name": "application",
+                "type": "VARCHAR(100)",
+                "description": "Application protocol identified"
+            },
+            {
+                "name": "action",
+                "type": "VARCHAR(50)",
+                "description": "Action taken (allowed, blocked, dropped)"
+            },
+            {
+                "name": "threat_detected",
+                "type": "BOOLEAN",
+                "description": "Threat detection flag"
+            },
+            {
+                "name": "threat_name",
+                "type": "VARCHAR(255)",
+                "description": "Threat name if detected"
+            },
+            {
+                "name": "sensor_name",
+                "type": "VARCHAR(100)",
+                "description": "Network sensor name"
+            }
+        ]
+    },
+    "firewall_events": {
+        "category": "network",
+        "description": "Firewall allow/deny decisions",
+        "fields": [
+            {
+                "name": "event_id",
+                "type": "VARCHAR(64)",
+                "description": "Unique event identifier"
+            },
+            {
+                "name": "timestamp",
+                "type": "TIMESTAMP",
+                "description": "Event time"
+            },
+            {
+                "name": "firewall_name",
+                "type": "VARCHAR(255)",
+                "description": "Firewall device name"
+            },
+            {
+                "name": "action",
+                "type": "VARCHAR(50)",
+                "description": "Action taken (allow, deny, drop)"
+            },
+            {
+                "name": "protocol",
+                "type": "VARCHAR(20)",
+                "description": "Protocol"
+            },
+            {
+                "name": "source_ip",
+                "type": "VARCHAR(45)",
+                "description": "Source IP"
+            },
+            {
+                "name": "source_port",
+                "type": "INTEGER",
+                "description": "Source port"
+            },
+            {
+                "name": "source_zone",
+                "type": "VARCHAR(100)",
+                "description": "Source security zone"
+            },
+            {
+                "name": "destination_ip",
+                "type": "VARCHAR(45)",
+                "description": "Destination IP"
+            },
+            {
+                "name": "destination_port",
+                "type": "INTEGER",
+                "description": "Destination port"
+            },
+            {
+                "name": "destination_zone",
+                "type": "VARCHAR(100)",
+                "description": "Destination security zone"
+            },
+            {
+                "name": "rule_name",
+                "type": "VARCHAR(255)",
+                "description": "Firewall rule matched"
+            },
+            {
+                "name": "rule_id",
+                "type": "VARCHAR(100)",
+                "description": "Rule identifier"
+            },
+            {
+                "name": "bytes_transferred",
+                "type": "BIGINT",
+                "description": "Bytes transferred"
+            },
+            {
+                "name": "session_id",
+                "type": "VARCHAR(100)",
+                "description": "Session identifier"
+            },
+            {
+                "name": "nat_source_ip",
+                "type": "VARCHAR(45)",
+                "description": "NAT source IP"
+            },
+            {
+                "name": "nat_destination_ip",
+                "type": "VARCHAR(45)",
+                "description": "NAT destination IP"
+            },
+            {
+                "name": "application",
+                "type": "VARCHAR(100)",
+                "description": "Application detected"
+            },
+            {
+                "name": "threat_detected",
+                "type": "BOOLEAN",
+                "description": "Threat flag"
+            }
+        ]
+    },
+    "dns_queries": {
+        "category": "network",
+        "description": "DNS query and response logging",
+        "fields": [
+            {
+                "name": "query_id",
+                "type": "VARCHAR(64)",
+                "description": "Unique query identifier"
+            },
+            {
+                "name": "timestamp",
+                "type": "TIMESTAMP",
+                "description": "Query time"
+            },
+            {
+                "name": "source_ip",
+                "type": "VARCHAR(45)",
+                "description": "Client IP address"
+            },
+            {
+                "name": "source_hostname",
+                "type": "VARCHAR(255)",
+                "description": "Client hostname"
+            },
+            {
+                "name": "dns_server",
+                "type": "VARCHAR(45)",
+                "description": "DNS server IP"
+            },
+            {
+                "name": "query_name",
+                "type": "TEXT",
+                "description": "Domain name queried"
+            },
+            {
+                "name": "query_type",
+                "type": "VARCHAR(20)",
+                "description": "Query type (A, AAAA, MX, TXT, etc.)"
+            },
+            {
+                "name": "response_code",
+                "type": "VARCHAR(50)",
+                "description": "Response code (NOERROR, NXDOMAIN, etc.)"
+            },
+            {
+                "name": "response_ips",
+                "type": "TEXT",
+                "description": "Resolved IP addresses (JSON array)"
+            },
+            {
+                "name": "response_time_ms",
+                "type": "INTEGER",
+                "description": "Response time in milliseconds"
+            },
+            {
+                "name": "threat_category",
+                "type": "VARCHAR(100)",
+                "description": "Threat category if malicious"
+            },
+            {
+                "name": "blocked",
+                "type": "BOOLEAN",
+                "description": "Whether query was blocked"
+            },
+            {
+                "name": "is_suspicious",
+                "type": "BOOLEAN",
+                "description": "Suspicious domain flag"
+            }
+        ]
+    },
+    "proxy_logs": {
+        "category": "network",
+        "description": "Web proxy access logs",
+        "fields": [
+            {
+                "name": "log_id",
+                "type": "VARCHAR(64)",
+                "description": "Unique log identifier"
+            },
+            {
+                "name": "timestamp",
+                "type": "TIMESTAMP",
+                "description": "Request time"
+            },
+            {
+                "name": "source_ip",
+                "type": "VARCHAR(45)",
+                "description": "Client IP address"
+            },
+            {
+                "name": "user_name",
+                "type": "VARCHAR(255)",
+                "description": "Authenticated user"
+            },
+            {
+                "name": "method",
+                "type": "VARCHAR(20)",
+                "description": "HTTP method"
+            },
+            {
+                "name": "url",
+                "type": "TEXT",
+                "description": "Full URL requested"
+            },
+            {
+                "name": "domain",
+                "type": "VARCHAR(500)",
+                "description": "Domain name"
+            },
+            {
+                "name": "uri_path",
+                "type": "TEXT",
+                "description": "URI path"
+            },
+            {
+                "name": "status_code",
+                "type": "INTEGER",
+                "description": "HTTP status code"
+            },
+            {
+                "name": "bytes_sent",
+                "type": "BIGINT",
+                "description": "Bytes sent to client"
+            },
+            {
+                "name": "bytes_received",
+                "type": "BIGINT",
+                "description": "Bytes received from server"
+            },
+            {
+                "name": "user_agent",
+                "type": "TEXT",
+                "description": "User agent string"
+            },
+            {
+                "name": "referrer",
+                "type": "TEXT",
+                "description": "Referrer URL"
+            },
+            {
+                "name": "category",
+                "type": "VARCHAR(100)",
+                "description": "URL category"
+            },
+            {
+                "name": "action",
+                "type": "VARCHAR(50)",
+                "description": "Action (allowed, blocked)"
+            },
+            {
+                "name": "threat_detected",
+                "type": "BOOLEAN",
+                "description": "Threat detection flag"
+            },
+            {
+                "name": "mime_type",
+                "type": "VARCHAR(100)",
+                "description": "Content MIME type"
+            }
+        ]
+    },
+    "authentication_events": {
+        "category": "authentication",
+        "description": "User authentication attempts and results",
+        "fields": [
+            {
+                "name": "event_id",
+                "type": "VARCHAR(64)",
+                "description": "Unique event identifier"
+            },
+            {
+                "name": "timestamp",
+                "type": "TIMESTAMP",
+                "description": "Authentication time"
+            },
+            {
+                "name": "event_type",
+                "type": "VARCHAR(50)",
+                "description": "Event type (login, logout, failed_login)"
+            },
+            {
+                "name": "status",
+                "type": "VARCHAR(50)",
+                "description": "Authentication status (success, failure)"
+            },
+            {
+                "name": "failure_reason",
+                "type": "VARCHAR(255)",
+                "description": "Reason for failure"
+            },
+            {
+                "name": "user_name",
+                "type": "VARCHAR(255)",
+                "description": "Username"
+            },
+            {
+                "name": "user_id",
+                "type": "VARCHAR(255)",
+                "description": "User identifier"
+            },
+            {
+                "name": "user_domain",
+                "type": "VARCHAR(255)",
+                "description": "User domain"
+            },
+            {
+                "name": "source_ip",
+                "type": "VARCHAR(45)",
+                "description": "Source IP address"
+            },
+            {
+                "name": "source_hostname",
+                "type": "VARCHAR(255)",
+                "description": "Source hostname"
+            },
+            {
+                "name": "destination_hostname",
+                "type": "VARCHAR(255)",
+                "description": "Destination host"
+            },
+            {
+                "name": "authentication_method",
+                "type": "VARCHAR(100)",
+                "description": "Auth method (password, MFA, SSO, certificate)"
+            },
+            {
+                "name": "protocol",
+                "type": "VARCHAR(50)",
+                "description": "Protocol (Kerberos, NTLM, RADIUS, LDAP)"
+            },
+            {
+                "name": "application",
+                "type": "VARCHAR(255)",
+                "description": "Application accessed"
+            },
+            {
+                "name": "session_id",
+                "type": "VARCHAR(255)",
+                "description": "Session identifier"
+            },
+            {
+                "name": "logon_type",
+                "type": "VARCHAR(50)",
+                "description": "Logon type (interactive, remote, service)"
+            },
+            {
+                "name": "mfa_used",
+                "type": "BOOLEAN",
+                "description": "MFA flag"
+            },
+            {
+                "name": "mfa_method",
+                "type": "VARCHAR(100)",
+                "description": "MFA method used"
+            },
+            {
+                "name": "privileged_account",
+                "type": "BOOLEAN",
+                "description": "Privileged account flag"
+            },
+            {
+                "name": "geolocation",
+                "type": "VARCHAR(255)",
+                "description": "Geographic location"
+            },
+            {
+                "name": "risk_score",
+                "type": "INTEGER",
+                "description": "Authentication risk score"
+            }
+        ]
+    },
+    "active_directory_events": {
+        "category": "authentication",
+        "description": "Active Directory security events",
+        "fields": [
+            {
+                "name": "event_id",
+                "type": "VARCHAR(64)",
+                "description": "Unique event identifier"
+            },
+            {
+                "name": "timestamp",
+                "type": "TIMESTAMP",
+                "description": "Event time"
+            },
+            {
+                "name": "event_code",
+                "type": "INTEGER",
+                "description": "Windows event code"
+            },
+            {
+                "name": "event_type",
+                "type": "VARCHAR(100)",
+                "description": "Event type description"
+            },
+            {
+                "name": "domain_controller",
+                "type": "VARCHAR(255)",
+                "description": "Domain controller name"
+            },
+            {
+                "name": "domain",
+                "type": "VARCHAR(255)",
+                "description": "Domain name"
+            },
+            {
+                "name": "subject_user",
+                "type": "VARCHAR(255)",
+                "description": "User performing action"
+            },
+            {
+                "name": "target_user",
+                "type": "VARCHAR(255)",
+                "description": "Target user account"
+            },
+            {
+                "name": "target_object",
+                "type": "TEXT",
+                "description": "Target object (user, group, OU)"
+            },
+            {
+                "name": "object_type",
+                "type": "VARCHAR(100)",
+                "description": "Object type"
+            },
+            {
+                "name": "action",
+                "type": "VARCHAR(100)",
+                "description": "Action performed"
+            },
+            {
+                "name": "attributes_changed",
+                "type": "TEXT",
+                "description": "Attributes modified (JSON)"
+            },
+            {
+                "name": "group_name",
+                "type": "VARCHAR(255)",
+                "description": "Group name for membership changes"
+            },
+            {
+                "name": "source_ip",
+                "type": "VARCHAR(45)",
+                "description": "Source IP"
+            },
+            {
+                "name": "status",
+                "type": "VARCHAR(50)",
+                "description": "Operation status"
+            }
+        ]
+    },
+    "privileged_access": {
+        "category": "authentication",
+        "description": "Privileged account usage and elevation",
+        "fields": [
+            {
+                "name": "event_id",
+                "type": "VARCHAR(64)",
+                "description": "Unique event identifier"
+            },
+            {
+                "name": "timestamp",
+                "type": "TIMESTAMP",
+                "description": "Event time"
+            },
+            {
+                "name": "action_type",
+                "type": "VARCHAR(100)",
+                "description": "Action type (sudo, runas, privilege_escalation)"
+            },
+            {
+                "name": "user_name",
+                "type": "VARCHAR(255)",
+                "description": "Original user"
+            },
+            {
+                "name": "privileged_user",
+                "type": "VARCHAR(255)",
+                "description": "Privileged account used"
+            },
+            {
+                "name": "hostname",
+                "type": "VARCHAR(255)",
+                "description": "Target hostname"
+            },
+            {
+                "name": "source_ip",
+                "type": "VARCHAR(45)",
+                "description": "Source IP"
+            },
+            {
+                "name": "command",
+                "type": "TEXT",
+                "description": "Command executed"
+            },
+            {
+                "name": "status",
+                "type": "VARCHAR(50)",
+                "description": "Execution status"
+            },
+            {
+                "name": "session_id",
+                "type": "VARCHAR(255)",
+                "description": "Session identifier"
+            },
+            {
+                "name": "approval_required",
+                "type": "BOOLEAN",
+                "description": "Approval requirement flag"
+            },
+            {
+                "name": "approved_by",
+                "type": "VARCHAR(255)",
+                "description": "Approver name"
+            },
+            {
+                "name": "ticket_id",
+                "type": "VARCHAR(100)",
+                "description": "Associated ticket ID"
+            }
+        ]
+    },
+    "cloud_audit_logs": {
+        "category": "cloud",
+        "description": "Cloud platform audit logs (AWS, Azure, GCP)",
+        "fields": [
+            {
+                "name": "event_id",
+                "type": "VARCHAR(64)",
+                "description": "Unique event identifier"
+            },
+            {
+                "name": "timestamp",
+                "type": "TIMESTAMP",
+                "description": "Event time"
+            },
+            {
+                "name": "cloud_provider",
+                "type": "VARCHAR(50)",
+                "description": "Cloud provider (AWS, Azure, GCP)"
+            },
+            {
+                "name": "account_id",
+                "type": "VARCHAR(255)",
+                "description": "Cloud account identifier"
+            },
+            {
+                "name": "region",
+                "type": "VARCHAR(100)",
+                "description": "Cloud region"
+            },
+            {
+                "name": "service_name",
+                "type": "VARCHAR(255)",
+                "description": "Cloud service name"
+            },
+            {
+                "name": "event_name",
+                "type": "VARCHAR(255)",
+                "description": "API call or event name"
+            },
+            {
+                "name": "event_type",
+                "type": "VARCHAR(100)",
+                "description": "Event type category"
+            },
+            {
+                "name": "user_identity",
+                "type": "TEXT",
+                "description": "User identity (JSON)"
+            },
+            {
+                "name": "user_name",
+                "type": "VARCHAR(255)",
+                "description": "Username"
+            },
+            {
+                "name": "user_type",
+                "type": "VARCHAR(100)",
+                "description": "User type (IAMUser, AssumedRole, Root)"
+            },
+            {
+                "name": "source_ip",
+                "type": "VARCHAR(45)",
+                "description": "Source IP address"
+            },
+            {
+                "name": "user_agent",
+                "type": "TEXT",
+                "description": "User agent string"
+            },
+            {
+                "name": "request_parameters",
+                "type": "TEXT",
+                "description": "Request parameters (JSON)"
+            },
+            {
+                "name": "response_elements",
+                "type": "TEXT",
+                "description": "Response elements (JSON)"
+            },
+            {
+                "name": "error_code",
+                "type": "VARCHAR(100)",
+                "description": "Error code if failed"
+            },
+            {
+                "name": "error_message",
+                "type": "TEXT",
+                "description": "Error message"
+            },
+            {
+                "name": "resource_name",
+                "type": "TEXT",
+                "description": "Resource name"
+            },
+            {
+                "name": "resource_type",
+                "type": "VARCHAR(255)",
+                "description": "Resource type"
+            },
+            {
+                "name": "action_result",
+                "type": "VARCHAR(50)",
+                "description": "Action result (success, failure)"
+            },
+            {
+                "name": "mfa_authenticated",
+                "type": "BOOLEAN",
+                "description": "MFA flag"
+            }
+        ]
+    },
+    "cloud_resource_changes": {
+        "category": "cloud",
+        "description": "Cloud infrastructure configuration changes",
+        "fields": [
+            {
+                "name": "change_id",
+                "type": "VARCHAR(64)",
+                "description": "Unique change identifier"
+            },
+            {
+                "name": "timestamp",
+                "type": "TIMESTAMP",
+                "description": "Change time"
+            },
+            {
+                "name": "cloud_provider",
+                "type": "VARCHAR(50)",
+                "description": "Cloud provider"
+            },
+            {
+                "name": "account_id",
+                "type": "VARCHAR(255)",
+                "description": "Cloud account"
+            },
+            {
+                "name": "resource_id",
+                "type": "VARCHAR(500)",
+                "description": "Resource identifier"
+            },
+            {
+                "name": "resource_type",
+                "type": "VARCHAR(255)",
+                "description": "Resource type (EC2, S3, Lambda, etc.)"
+            },
+            {
+                "name": "resource_name",
+                "type": "VARCHAR(500)",
+                "description": "Resource name"
+            },
+            {
+                "name": "change_type",
+                "type": "VARCHAR(100)",
+                "description": "Change type (create, update, delete)"
+            },
+            {
+                "name": "configuration_before",
+                "type": "TEXT",
+                "description": "Configuration before change (JSON)"
+            },
+            {
+                "name": "configuration_after",
+                "type": "TEXT",
+                "description": "Configuration after change (JSON)"
+            },
+            {
+                "name": "changed_by",
+                "type": "VARCHAR(255)",
+                "description": "User making change"
+            },
+            {
+                "name": "change_source",
+                "type": "VARCHAR(100)",
+                "description": "Change source (console, cli, api, terraform)"
+            },
+            {
+                "name": "compliance_status",
+                "type": "VARCHAR(50)",
+                "description": "Compliance status"
+            },
+            {
+                "name": "tags",
+                "type": "TEXT",
+                "description": "Resource tags (JSON)"
+            }
+        ]
+    },
+    "email_events": {
+        "category": "email",
+        "description": "Email security events and threats",
+        "fields": [
+            {
+                "name": "message_id",
+                "type": "VARCHAR(255)",
+                "description": "Email message ID"
+            },
+            {
+                "name": "timestamp",
+                "type": "TIMESTAMP",
+                "description": "Email timestamp"
+            },
+            {
+                "name": "direction",
+                "type": "VARCHAR(20)",
+                "description": "Direction (inbound, outbound, internal)"
+            },
+            {
+                "name": "sender_email",
+                "type": "VARCHAR(500)",
+                "description": "Sender email address"
+            },
+            {
+                "name": "sender_domain",
+                "type": "VARCHAR(255)",
+                "description": "Sender domain"
+            },
+            {
+                "name": "sender_ip",
+                "type": "VARCHAR(45)",
+                "description": "Sender IP address"
+            },
+            {
+                "name": "recipient_emails",
+                "type": "TEXT",
+                "description": "Recipient email addresses (JSON array)"
+            },
+            {
+                "name": "subject",
+                "type": "TEXT",
+                "description": "Email subject"
+            },
+            {
+                "name": "attachment_count",
+                "type": "INTEGER",
+                "description": "Number of attachments"
+            },
+            {
+                "name": "attachment_names",
+                "type": "TEXT",
+                "description": "Attachment filenames (JSON array)"
+            },
+            {
+                "name": "attachment_hashes",
+                "type": "TEXT",
+                "description": "Attachment hashes (JSON array)"
+            },
+            {
+                "name": "url_count",
+                "type": "INTEGER",
+                "description": "Number of URLs in email"
+            },
+            {
+                "name": "urls",
+                "type": "TEXT",
+                "description": "URLs found in email (JSON array)"
+            },
+            {
+                "name": "spam_score",
+                "type": "DECIMAL(5,2)",
+                "description": "Spam score"
+            },
+            {
+                "name": "threat_type",
+                "type": "VARCHAR(100)",
+                "description": "Threat type (phishing, malware, spam)"
+            },
+            {
+                "name": "action_taken",
+                "type": "VARCHAR(100)",
+                "description": "Action taken (delivered, quarantined, blocked)"
+            },
+            {
+                "name": "spf_result",
+                "type": "VARCHAR(50)",
+                "description": "SPF check result"
+            },
+            {
+                "name": "dkim_result",
+                "type": "VARCHAR(50)",
+                "description": "DKIM check result"
+            },
+            {
+                "name": "dmarc_result",
+                "type": "VARCHAR(50)",
+                "description": "DMARC check result"
+            },
+            {
+                "name": "size_bytes",
+                "type": "INTEGER",
+                "description": "Email size in bytes"
+            }
+        ]
+    },
+    "threat_intelligence": {
+        "category": "threat_intel",
+        "description": "Threat intelligence indicators and enrichment",
+        "fields": [
+            {
+                "name": "indicator_id",
+                "type": "VARCHAR(64)",
+                "description": "Unique indicator identifier"
+            },
+            {
+                "name": "timestamp",
+                "type": "TIMESTAMP",
+                "description": "Discovery/update time"
+            },
+            {
+                "name": "indicator_type",
+                "type": "VARCHAR(50)",
+                "description": "Indicator type (ip, domain, url, hash, email)"
+            },
+            {
+                "name": "indicator_value",
+                "type": "TEXT",
+                "description": "Indicator value"
+            },
+            {
+                "name": "threat_type",
+                "type": "VARCHAR(100)",
+                "description": "Threat type (malware, c2, phishing, etc.)"
+            },
+            {
+                "name": "threat_actor",
+                "type": "VARCHAR(255)",
+                "description": "Associated threat actor"
+            },
+            {
+                "name": "malware_family",
+                "type": "VARCHAR(255)",
+                "description": "Malware family"
+            },
+            {
+                "name": "confidence_score",
+                "type": "INTEGER",
+                "description": "Confidence score (0-100)"
+            },
+            {
+                "name": "severity",
+                "type": "VARCHAR(20)",
+                "description": "Severity level"
+            },
+            {
+                "name": "first_seen",
+                "type": "TIMESTAMP",
+                "description": "First seen timestamp"
+            },
+            {
+                "name": "last_seen",
+                "type": "TIMESTAMP",
+                "description": "Last seen timestamp"
+            },
+            {
+                "name": "source",
+                "type": "VARCHAR(255)",
+                "description": "Intelligence source"
+            },
+            {
+                "name": "tags",
+                "type": "TEXT",
+                "description": "Tags (JSON array)"
+            },
+            {
+                "name": "description",
+                "type": "TEXT",
+                "description": "Threat description"
+            },
+            {
+                "name": "references",
+                "type": "TEXT",
+                "description": "Reference URLs (JSON array)"
+            },
+            {
+                "name": "active",
+                "type": "BOOLEAN",
+                "description": "Active status"
+            }
+        ]
+    },
+    "vulnerability_scans": {
+        "category": "vulnerability",
+        "description": "Vulnerability scan results",
+        "fields": [
+            {
+                "name": "scan_id",
+                "type": "VARCHAR(64)",
+                "description": "Unique scan identifier"
+            },
+            {
+                "name": "vulnerability_id",
+                "type": "VARCHAR(100)",
+                "description": "Vulnerability identifier (CVE, etc.)"
+            },
+            {
+                "name": "timestamp",
+                "type": "TIMESTAMP",
+                "description": "Scan time"
+            },
+            {
+                "name": "hostname",
+                "type": "VARCHAR(255)",
+                "description": "Affected hostname"
+            },
+            {
+                "name": "ip_address",
+                "type": "VARCHAR(45)",
+                "description": "Affected IP address"
+            },
+            {
+                "name": "vulnerability_name",
+                "type": "TEXT",
+                "description": "Vulnerability name"
+            },
+            {
+                "name": "description",
+                "type": "TEXT",
+                "description": "Vulnerability description"
+            },
+            {
+                "name": "severity",
+                "type": "VARCHAR(20)",
+                "description": "Severity (critical, high, medium, low)"
+            },
+            {
+                "name": "cvss_score",
+                "type": "DECIMAL(3,1)",
+                "description": "CVSS score"
+            },
+            {
+                "name": "cvss_vector",
+                "type": "VARCHAR(255)",
+                "description": "CVSS vector string"
+            },
+            {
+                "name": "port",
+                "type": "INTEGER",
+                "description": "Affected port"
+            },
+            {
+                "name": "protocol",
+                "type": "VARCHAR(20)",
+                "description": "Protocol"
+            },
+            {
+                "name": "service",
+                "type": "VARCHAR(255)",
+                "description": "Affected service"
+            },
+            {
+                "name": "plugin_id",
+                "type": "VARCHAR(100)",
+                "description": "Scanner plugin ID"
+            },
+            {
+                "name": "solution",
+                "type": "TEXT",
+                "description": "Remediation solution"
+            },
+            {
+                "name": "exploitable",
+                "type": "BOOLEAN",
+                "description": "Exploitability flag"
+            },
+            {
+                "name": "patch_available",
+                "type": "BOOLEAN",
+                "description": "Patch availability"
+            },
+            {
+                "name": "status",
+                "type": "VARCHAR(50)",
+                "description": "Remediation status"
+            },
+            {
+                "name": "false_positive",
+                "type": "BOOLEAN",
+                "description": "False positive flag"
+            }
+        ]
+    },
+    "dlp_events": {
+        "category": "dlp",
+        "description": "Data Loss Prevention policy violations",
+        "fields": [
+            {
+                "name": "event_id",
+                "type": "VARCHAR(64)",
+                "description": "Unique event identifier"
+            },
+            {
+                "name": "timestamp",
+                "type": "TIMESTAMP",
+                "description": "Event time"
+            },
+            {
+                "name": "user_name",
+                "type": "VARCHAR(255)",
+                "description": "User involved"
+            },
+            {
+                "name": "source_hostname",
+                "type": "VARCHAR(255)",
+                "description": "Source host"
+            },
+            {
+                "name": "source_ip",
+                "type": "VARCHAR(45)",
+                "description": "Source IP"
+            },
+            {
+                "name": "policy_name",
+                "type": "VARCHAR(255)",
+                "description": "DLP policy triggered"
+            },
+            {
+                "name": "policy_id",
+                "type": "VARCHAR(100)",
+                "description": "Policy identifier"
+            },
+            {
+                "name": "severity",
+                "type": "VARCHAR(20)",
+                "description": "Severity level"
+            },
+            {
+                "name": "data_type",
+                "type": "VARCHAR(100)",
+                "description": "Sensitive data type (PII, PHI, PCI, IP)"
+            },
+            {
+                "name": "channel",
+                "type": "VARCHAR(100)",
+                "description": "Channel (email, web, usb, print, cloud)"
+            },
+            {
+                "name": "action_taken",
+                "type": "VARCHAR(100)",
+                "description": "Action (block, allow, audit, quarantine)"
+            },
+            {
+                "name": "file_name",
+                "type": "VARCHAR(500)",
+                "description": "File name involved"
+            },
+            {
+                "name": "file_path",
+                "type": "TEXT",
+                "description": "File path"
+            },
+            {
+                "name": "file_size",
+                "type": "BIGINT",
+                "description": "File size in bytes"
+            },
+            {
+                "name": "destination",
+                "type": "TEXT",
+                "description": "Destination (email, URL, device)"
+            },
+            {
+                "name": "matches_count",
+                "type": "INTEGER",
+                "description": "Number of policy matches"
+            },
+            {
+                "name": "match_details",
+                "type": "TEXT",
+                "description": "Match details (JSON)"
+            },
+            {
+                "name": "justification",
+                "type": "TEXT",
+                "description": "User justification if provided"
+            }
+        ]
+    },
+    "security_alerts": {
+        "category": "security_ops",
+        "description": "Aggregated security alerts from all sources",
+        "fields": [
+            {
+                "name": "alert_id",
+                "type": "VARCHAR(64)",
+                "description": "Unique alert identifier"
+            },
+            {
+                "name": "timestamp",
+                "type": "TIMESTAMP",
+                "description": "Alert generation time"
+            },
+            {
+                "name": "alert_name",
+                "type": "VARCHAR(255)",
+                "description": "Alert name"
+            },
+            {
+                "name": "alert_type",
+                "type": "VARCHAR(100)",
+                "description": "Alert type/category"
+            },
+            {
+                "name": "severity",
+                "type": "VARCHAR(20)",
+                "description": "Severity level"
+            },
+            {
+                "name": "priority",
+                "type": "VARCHAR(20)",
+                "description": "Priority level"
+            },
+            {
+                "name": "status",
+                "type": "VARCHAR(50)",
+                "description": "Status (new, investigating, resolved, false_positive)"
+            },
+            {
+                "name": "source_system",
+                "type": "VARCHAR(100)",
+                "description": "Source detection system"
+            },
+            {
+                "name": "detection_method",
+                "type": "VARCHAR(100)",
+                "description": "Detection method (signature, behavior, anomaly, ml)"
+            },
+            {
+                "name": "confidence_score",
+                "type": "INTEGER",
+                "description": "Detection confidence (0-100)"
+            },
+            {
+                "name": "affected_assets",
+                "type": "TEXT",
+                "description": "Affected assets (JSON array)"
+            },
+            {
+                "name": "affected_users",
+                "type": "TEXT",
+                "description": "Affected users (JSON array)"
+            },
+            {
+                "name": "tactics",
+                "type": "TEXT",
+                "description": "MITRE ATT&CK tactics (JSON array)"
+            },
+            {
+                "name": "techniques",
+                "type": "TEXT",
+                "description": "MITRE ATT&CK techniques (JSON array)"
+            },
+            {
+                "name": "description",
+                "type": "TEXT",
+                "description": "Alert description"
+            },
+            {
+                "name": "remediation_steps",
+                "type": "TEXT",
+                "description": "Recommended remediation"
+            },
+            {
+                "name": "assigned_to",
+                "type": "VARCHAR(255)",
+                "description": "Analyst assigned"
+            },
+            {
+                "name": "investigation_notes",
+                "type": "TEXT",
+                "description": "Investigation notes"
+            },
+            {
+                "name": "related_alerts",
+                "type": "TEXT",
+                "description": "Related alert IDs (JSON array)"
+            },
+            {
+                "name": "incident_id",
+                "type": "VARCHAR(64)",
+                "description": "Associated incident ID"
+            }
+        ]
+    },
+    "incidents": {
+        "category": "security_ops",
+        "description": "Security incidents and investigations",
+        "fields": [
+            {
+                "name": "incident_id",
+                "type": "VARCHAR(64)",
+                "description": "Unique incident identifier"
+            },
+            {
+                "name": "created_timestamp",
+                "type": "TIMESTAMP",
+                "description": "Incident creation time"
+            },
+            {
+                "name": "updated_timestamp",
+                "type": "TIMESTAMP",
+                "description": "Last update time"
+            },
+            {
+                "name": "incident_name",
+                "type": "VARCHAR(255)",
+                "description": "Incident name"
+            },
+            {
+                "name": "incident_type",
+                "type": "VARCHAR(100)",
+                "description": "Incident type (malware, breach, insider, etc.)"
+            },
+            {
+                "name": "severity",
+                "type": "VARCHAR(20)",
+                "description": "Severity level"
+            },
+            {
+                "name": "priority",
+                "type": "VARCHAR(20)",
+                "description": "Priority level"
+            },
+            {
+                "name": "status",
+                "type": "VARCHAR(50)",
+                "description": "Status (open, investigating, contained, resolved, closed)"
+            },
+            {
+                "name": "assigned_to",
+                "type": "VARCHAR(255)",
+                "description": "Lead analyst"
+            },
+            {
+                "name": "team",
+                "type": "VARCHAR(100)",
+                "description": "Response team"
+            },
+            {
+                "name": "description",
+                "type": "TEXT",
+                "description": "Incident description"
+            },
+            {
+                "name": "affected_systems",
+                "type": "TEXT",
+                "description": "Affected systems (JSON array)"
+            },
+            {
+                "name": "affected_users",
+                "type": "TEXT",
+                "description": "Affected users (JSON array)"
+            },
+            {
+                "name": "data_compromised",
+                "type": "BOOLEAN",
+                "description": "Data compromise flag"
+            },
+            {
+                "name": "data_type",
+                "type": "VARCHAR(255)",
+                "description": "Type of data compromised"
+            },
+            {
+                "name": "containment_timestamp",
+                "type": "TIMESTAMP",
+                "description": "Containment time"
+            },
+            {
+                "name": "resolution_timestamp",
+                "type": "TIMESTAMP",
+                "description": "Resolution time"
+            },
+            {
+                "name": "root_cause",
+                "type": "TEXT",
+                "description": "Root cause analysis"
+            },
+            {
+                "name": "lessons_learned",
+                "type": "TEXT",
+                "description": "Lessons learned"
+            },
+            {
+                "name": "estimated_impact",
+                "type": "TEXT",
+                "description": "Estimated business impact"
+            }
+        ]
+    },
+    "application_logs": {
+        "category": "application",
+        "description": "Application security logs and events",
+        "fields": [
+            {
+                "name": "log_id",
+                "type": "VARCHAR(64)",
+                "description": "Unique log identifier"
+            },
+            {
+                "name": "timestamp",
+                "type": "TIMESTAMP",
+                "description": "Event time"
+            },
+            {
+                "name": "application_name",
+                "type": "VARCHAR(255)",
+                "description": "Application name"
+            },
+            {
+                "name": "application_version",
+                "type": "VARCHAR(100)",
+                "description": "Application version"
+            },
+            {
+                "name": "server_hostname",
+                "type": "VARCHAR(255)",
+                "description": "Server hostname"
+            },
+            {
+                "name": "log_level",
+                "type": "VARCHAR(20)",
+                "description": "Log level (DEBUG, INFO, WARN, ERROR, FATAL)"
+            },
+            {
+                "name": "event_type",
+                "type": "VARCHAR(100)",
+                "description": "Event type"
+            },
+            {
+                "name": "user_id",
+                "type": "VARCHAR(255)",
+                "description": "User identifier"
+            },
+            {
+                "name": "session_id",
+                "type": "VARCHAR(255)",
+                "description": "Session identifier"
+            },
+            {
+                "name": "source_ip",
+                "type": "VARCHAR(45)",
+                "description": "Client IP address"
+            },
+            {
+                "name": "request_method",
+                "type": "VARCHAR(20)",
+                "description": "HTTP method"
+            },
+            {
+                "name": "request_uri",
+                "type": "TEXT",
+                "description": "Request URI"
+            },
+            {
+                "name": "response_code",
+                "type": "INTEGER",
+                "description": "Response status code"
+            },
+            {
+                "name": "response_time_ms",
+                "type": "INTEGER",
+                "description": "Response time in ms"
+            },
+            {
+                "name": "message",
+                "type": "TEXT",
+                "description": "Log message"
+            },
+            {
+                "name": "stack_trace",
+                "type": "TEXT",
+                "description": "Stack trace if error"
+            },
+            {
+                "name": "custom_fields",
+                "type": "TEXT",
+                "description": "Custom fields (JSON)"
+            }
+        ]
+    },
+    "waf_events": {
+        "category": "application",
+        "description": "Web Application Firewall events",
+        "fields": [
+            {
+                "name": "event_id",
+                "type": "VARCHAR(64)",
+                "description": "Unique event identifier"
+            },
+            {
+                "name": "timestamp",
+                "type": "TIMESTAMP",
+                "description": "Event time"
+            },
+            {
+                "name": "source_ip",
+                "type": "VARCHAR(45)",
+                "description": "Client IP address"
+            },
+            {
+                "name": "destination_ip",
+                "type": "VARCHAR(45)",
+                "description": "Server IP address"
+            },
+            {
+                "name": "method",
+                "type": "VARCHAR(20)",
+                "description": "HTTP method"
+            },
+            {
+                "name": "uri",
+                "type": "TEXT",
+                "description": "Request URI"
+            },
+            {
+                "name": "query_string",
+                "type": "TEXT",
+                "description": "Query string"
+            },
+            {
+                "name": "user_agent",
+                "type": "TEXT",
+                "description": "User agent"
+            },
+            {
+                "name": "referrer",
+                "type": "TEXT",
+                "description": "Referrer"
+            },
+            {
+                "name": "host",
+                "type": "VARCHAR(255)",
+                "description": "Host header"
+            },
+            {
+                "name": "attack_type",
+                "type": "VARCHAR(100)",
+                "description": "Attack type (SQLi, XSS, LFI, RCE, etc.)"
+            },
+            {
+                "name": "rule_id",
+                "type": "VARCHAR(100)",
+                "description": "WAF rule triggered"
+            },
+            {
+                "name": "rule_message",
+                "type": "TEXT",
+                "description": "Rule description"
+            },
+            {
+                "name": "action",
+                "type": "VARCHAR(50)",
+                "description": "Action taken (block, allow, challenge)"
+            },
+            {
+                "name": "severity",
+                "type": "VARCHAR(20)",
+                "description": "Severity level"
+            },
+            {
+                "name": "payload",
+                "type": "TEXT",
+                "description": "Malicious payload"
+            },
+            {
+                "name": "headers",
+                "type": "TEXT",
+                "description": "HTTP headers (JSON)"
+            },
+            {
+                "name": "country",
+                "type": "VARCHAR(100)",
+                "description": "Source country"
+            }
+        ]
+    },
+    "asset_inventory": {
+        "category": "asset",
+        "description": "IT asset inventory and configuration",
+        "fields": [
+            {
+                "name": "asset_id",
+                "type": "VARCHAR(64)",
+                "description": "Unique asset identifier"
+            },
+            {
+                "name": "last_updated",
+                "type": "TIMESTAMP",
+                "description": "Last inventory update"
+            },
+            {
+                "name": "asset_type",
+                "type": "VARCHAR(100)",
+                "description": "Asset type (server, workstation, network_device, mobile)"
+            },
+            {
+                "name": "hostname",
+                "type": "VARCHAR(255)",
+                "description": "Hostname"
+            },
+            {
+                "name": "ip_addresses",
+                "type": "TEXT",
+                "description": "IP addresses (JSON array)"
+            },
+            {
+                "name": "mac_addresses",
+                "type": "TEXT",
+                "description": "MAC addresses (JSON array)"
+            },
+            {
+                "name": "os_type",
+                "type": "VARCHAR(100)",
+                "description": "Operating system type"
+            },
+            {
+                "name": "os_version",
+                "type": "VARCHAR(255)",
+                "description": "Operating system version"
+            },
+            {
+                "name": "manufacturer",
+                "type": "VARCHAR(255)",
+                "description": "Hardware manufacturer"
+            },
+            {
+                "name": "model",
+                "type": "VARCHAR(255)",
+                "description": "Hardware model"
+            },
+            {
+                "name": "serial_number",
+                "type": "VARCHAR(255)",
+                "description": "Serial number"
+            },
+            {
+                "name": "location",
+                "type": "VARCHAR(255)",
+                "description": "Physical location"
+            },
+            {
+                "name": "department",
+                "type": "VARCHAR(255)",
+                "description": "Owning department"
+            },
+            {
+                "name": "owner",
+                "type": "VARCHAR(255)",
+                "description": "Asset owner"
+            },
+            {
+                "name": "criticality",
+                "type": "VARCHAR(50)",
+                "description": "Business criticality (critical, high, medium, low)"
+            },
+            {
+                "name": "security_agent_installed",
+                "type": "BOOLEAN",
+                "description": "Security agent status"
+            },
+            {
+                "name": "last_scan",
+                "type": "TIMESTAMP",
+                "description": "Last security scan"
+            },
+            {
+                "name": "open_ports",
+                "type": "TEXT",
+                "description": "Open ports (JSON array)"
+            },
+            {
+                "name": "installed_software",
+                "type": "TEXT",
+                "description": "Installed software (JSON array)"
+            },
+            {
+                "name": "tags",
+                "type": "TEXT",
+                "description": "Asset tags (JSON array)"
+            }
+        ]
+    }
+}
