@@ -78,7 +78,7 @@
 **Decision 1: Semantic Retrieval as Primary**
 - **Choice:** Using embedding-based semantic search (Variant B from plan)
 - **Rationale:** Better accuracy than keyword matching, acceptable latency
-- **Tradeoff:** Requires OpenAI API for embeddings, but caching mitigates cost
+- **Tradeoff:** ~~Requires OpenAI API for embeddings~~ Uses local sentence-transformers (no API needed)
 
 **Decision 2: Single Agent with Structured Output**
 - **Choice:** One agent with Pydantic response model vs. multi-agent pipeline
@@ -89,6 +89,10 @@
 - **Choice:** Compute all table embeddings once, cache to pickle file
 - **Rationale:** 20 tables × $0.00002 = negligible cost, but caching makes dev iteration free
 - **Implementation:** `embeddings_cache/table_embeddings.pkl` (git-ignored)
+- **UPDATE (2025-11-30):** Revised to use local sentence-transformers instead of OpenAI
+  - Model: `multi-qa-mpnet-base-dot-v1` (~400MB, downloaded once)
+  - Reason: Only have Anthropic API key, local is faster/free/offline-capable
+  - Cache now includes model name to detect model changes
 
 **Decision 4: Validation Integrated, Not Blocking**
 - **Choice:** Validate SQL but don't block response; include warnings in output
@@ -179,8 +183,8 @@ d4bae0f Implement SQL query validator
 
 **Required Environment Variables:**
 ```bash
-OPENAI_API_KEY=sk-...          # For embeddings
-ANTHROPIC_API_KEY=sk-ant-...   # For Claude agent
+ANTHROPIC_API_KEY=sk-ant-...   # For Claude agent (only API key needed)
+# Note: Embeddings use sentence-transformers (local, no API key required)
 ```
 
 **Installation:**
