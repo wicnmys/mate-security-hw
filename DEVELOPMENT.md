@@ -206,6 +206,7 @@ pip install -r requirements-dev.txt
 1. **No actual database:** Agent generates SQL but doesn't execute
 2. **Validation is heuristic:** Regex-based, not a full SQL parser
 3. **Single retrieval strategy:** Only semantic (keyword available but not wired to CLI yet)
+4. **Hardcoded Anthropic provider:** Agent imports and uses `Claude` class directly from `agno.models.anthropic`, making it inflexible for switching providers (e.g., OpenAI, local models). Should use dynamic provider selection based on model string.
 
 ### Questions/Decisions Pending
 - [ ] Should we add baseline agent (keyword retrieval) as CLI option?
