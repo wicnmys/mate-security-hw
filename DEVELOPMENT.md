@@ -128,22 +128,117 @@ d4bae0f Implement SQL query validator
 
 ---
 
+### Phase 2: Testing ✅ COMPLETE
+**Started:** 2025-11-30
+**Completed:** 2025-11-30
+**Duration:** ~1 hour
+
+#### What We Built
+
+**Comprehensive Unit Test Suite - 138 Tests Passing**
+
+**1. Schema Loader Tests** (`tests/test_schema_loader.py`) - 23 tests
+- ✅ Loading schemas from single files and directories
+- ✅ Schema validation (missing fields, invalid types, malformed JSON)
+- ✅ Table description generation with configurable parameters
+- ✅ Context limit truncation with embedding model tokenization
+- ✅ LLM formatting with field limits
+- **Key Test:** Validates that `get_table_description` includes all fields by default (no arbitrary caps that lose semantic signal)
+
+**2. Keyword Retrieval Tests** (`tests/test_keyword_retrieval.py`) - 27 tests
+- ✅ Keyword index building from table/field names and descriptions
+- ✅ Tokenization (case handling, short token filtering, delimiter splitting)
+- ✅ Top-k retrieval with scoring, normalization, and fallback strategies
+- ✅ Field matching by keywords in names and descriptions
+- **Key Test:** Validates scoring mechanism prioritizes tables with more keyword matches
+
+**3. Semantic Retrieval Tests** (`tests/test_semantic_retrieval.py`) - 18 tests
+- ✅ Initialization and SentenceTransformer model loading
+- ✅ Embedding precomputation for all tables
+- ✅ Cache saving/loading with model name verification
+- ✅ Cache invalidation on model mismatch
+- ✅ Similarity-based retrieval and ranking
+- ✅ Cosine similarity calculations (identical, orthogonal, opposite vectors)
+- **Key Test:** Validates cache is properly invalidated when embedding model changes
+
+**4. SQL Validator Tests** (`tests/test_validator.py`) - 55 tests
+- ✅ Basic SQL syntax validation (SELECT/FROM structure)
+- ✅ Balanced delimiter checking (quotes, parentheses, escape sequences)
+- ✅ Table existence validation against schemas
+- ✅ Dangerous operation detection (DROP, DELETE, UPDATE, INSERT, etc.)
+- ✅ Field validation with strict and non-strict modes
+- ✅ SELECT field extraction with aliases and table qualifiers
+- ✅ Comprehensive validation with errors and warnings
+- **Key Test:** Validates that unclosed quotes/parentheses are correctly detected
+
+**5. Semantic Agent Tests** (`tests/test_semantic_agent.py`) - 15 tests
+- ✅ Agent initialization with schema loading and dependencies
+- ✅ Schema context building for LLM with relevance scores
+- ✅ Query generation with validation integration
+- ✅ Confidence adjustment based on validation results
+- ✅ Error handling with graceful fallback
+- ✅ Retrieval explanation for debugging
+- **Key Test:** Validates that validation errors reduce confidence score to ≤0.5
+
+#### Testing Strategy
+
+**Mocking for Speed and Reliability:**
+- All external dependencies mocked (SentenceTransformer, Agno Agent, Claude API)
+- Tests run in ~4 seconds total, no API keys required
+- Deterministic behavior for CI/CD pipelines
+
+**Test Organization:**
+- Each component in separate file for clarity
+- Fixtures for common test data (schemas, mock responses)
+- Descriptive test names explaining what is being validated
+- Comprehensive edge case coverage (empty inputs, errors, invalid data)
+
+#### Git Commit History (Phase 2)
+```
+748c8ee Add comprehensive unit tests for semantic agent
+5399ef0 Add comprehensive unit tests for SQL validator
+3492753 Add comprehensive unit tests for semantic retrieval
+3c8aa24 Add comprehensive unit tests for keyword retrieval
+868f285 Add comprehensive unit tests for schema loader
+8cdec58 Refactor get_table_description with configurable parameters
+```
+
+#### Files Created (5 test files)
+1. `tests/test_schema_loader.py` (306 lines)
+2. `tests/test_keyword_retrieval.py` (267 lines)
+3. `tests/test_semantic_retrieval.py` (353 lines)
+4. `tests/test_validator.py` (424 lines)
+5. `tests/test_semantic_agent.py` (404 lines)
+
+**Total:** ~1,754 lines of test code
+
+#### Why This Testing Matters for Mate Security
+
+**1. Production Readiness:**
+- Comprehensive test coverage demonstrates professional engineering practices
+- Fast test suite enables rapid iteration and refactoring
+- Clear test names serve as documentation of expected behavior
+
+**2. Debugging Capability:**
+- Can isolate whether errors come from:
+  - Retrieval (wrong tables selected)
+  - Generation (invalid SQL syntax)
+  - Validation (false positives/negatives)
+- Each component tested independently with mocked dependencies
+
+**3. Quality Assurance:**
+- Edge cases covered (empty inputs, nonexistent tables, malformed queries)
+- Validation of key business logic (scoring, confidence adjustment, caching)
+- Regression prevention as we add new features
+
+**4. Experimental Foundation:**
+- Test infrastructure ready for Phase 4 evaluation framework
+- Can measure retrieval precision with controlled test cases
+- Automated testing enables reproducible experiments
+
+---
+
 ## Next Steps
-
-### Phase 2: Testing (Next)
-**Priority:** HIGH - Critical for demonstrating production readiness
-
-**Unit Tests to Write:**
-1. ✅ `tests/test_schema_loader.py` - Schema loading and validation
-2. ✅ `tests/test_retrieval.py` - Keyword & semantic retrieval (most important!)
-3. ✅ `tests/test_validation.py` - SQL validation logic
-4. ✅ `tests/test_agents.py` - End-to-end agent tests
-
-**Why Testing Matters for Mate Security:**
-- Demonstrates production-ready thinking
-- Can isolate whether errors come from retrieval (wrong tables) vs generation (bad SQL)
-- Shows we can measure retrieval precision independently
-- Required for experimental evaluation framework
 
 ### Phase 3: Example Queries
 **Required:** 5 example queries from assignment
@@ -220,11 +315,11 @@ pip install -r requirements-dev.txt
 | Phase | Estimated | Actual | Status |
 |-------|-----------|--------|--------|
 | Phase 1: Setup & Foundation | 1.5 hrs | ~2 hrs | ✅ Complete |
-| Phase 2: Testing | 1.5 hrs | - | 🔄 Next |
-| Phase 3: Examples | 0.5 hrs | - | ⏳ Pending |
+| Phase 2: Testing | 1.5 hrs | ~1 hr | ✅ Complete |
+| Phase 3: Examples | 0.5 hrs | - | 🔄 Next |
 | Phase 4: Experiments | 2 hrs | - | ⏳ Pending |
 | Phase 5: Documentation | 1 hr | - | ⏳ Pending |
-| **Total** | **6.5 hrs** | **~2 hrs** | **31% complete** |
+| **Total** | **6.5 hrs** | **~3 hrs** | **46% complete** |
 
 ---
 
@@ -235,9 +330,13 @@ pip install -r requirements-dev.txt
 2. **Incremental commits:** Each feature committed separately = clear history
 3. **Agno framework:** Structured outputs with Pydantic made response handling clean
 4. **Caching embeddings:** Will save time/money during testing and iteration
+5. **Comprehensive testing:** 138 tests completed in ~1 hour, faster than estimated
+6. **Mocking strategy:** All external dependencies mocked = fast, reliable, no API keys needed
+7. **Test-driven bug finding:** Writing tests revealed edge cases we hadn't considered (e.g., arbitrary field caps in schema loader)
 
 ### Challenges
-1. **None so far** - Phase 1 went smoothly
+1. **Test fixture design:** Initial test for truncation failed because sample schema was too small - had to create larger test data
+2. **Tokenizer behavior:** Underscores treated as word characters by `\w` regex, not as delimiters - tests needed adjustment
 
 ### For Video Demo
 **Key Messages to Emphasize:**
@@ -248,4 +347,4 @@ pip install -r requirements-dev.txt
 
 ---
 
-*Last Updated: 2025-11-30 - Phase 1 Complete*
+*Last Updated: 2025-11-30 - Phase 2 Complete (138 tests passing)*
