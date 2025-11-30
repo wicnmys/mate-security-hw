@@ -240,15 +240,8 @@ d4bae0f Implement SQL query validator
 
 ## Next Steps
 
-### Phase 3: Example Queries
-**Required:** 5 example queries from assignment
-1. "Show me all high-severity security events from the last 24 hours"
-2. "Which users had the most failed login attempts this month?"
-3. "Find all suspicious file access events related to sensitive documents"
-4. "What are the top 10 most common security event types?"
-5. "Show me events where the same IP address triggered multiple alerts"
-
-### Phase 4: Experimental Framework (Differentiator)
+### Phase 3: Experimental Framework (Next)
+**Priority:** HIGH - Key differentiator for submission
 **Goal:** Compare retrieval strategies with data
 
 **Components:**
@@ -263,7 +256,17 @@ d4bae0f Implement SQL query validator
 - Cost: Total tokens per query
 - Retrieval Precision: % retrieved tables actually used
 
-### Phase 5: Documentation & Video
+### Phase 4: Documentation & Video
+**Includes:** README, example queries, video demo
+
+**Required Example Queries:**
+1. "Show me all high-severity security events from the last 24 hours"
+2. "Which users had the most failed login attempts this month?"
+3. "Find all suspicious file access events related to sensitive documents"
+4. "What are the top 10 most common security event types?"
+5. "Show me events where the same IP address triggered multiple alerts"
+
+**Documentation:**
 1. Complete README.md with setup, architecture, examples
 2. Record 5-minute video demo
 3. Final polish
@@ -304,9 +307,8 @@ pip install -r requirements-dev.txt
 4. **Hardcoded Anthropic provider:** Agent imports and uses `Claude` class directly from `agno.models.anthropic`, making it inflexible for switching providers (e.g., OpenAI, local models). Should use dynamic provider selection based on model string.
 
 ### Questions/Decisions Pending
-- [ ] Should we add baseline agent (keyword retrieval) as CLI option?
+- [ ] Should we add baseline agent (keyword retrieval) as CLI option for experimental comparison?
 - [ ] How many test cases to generate for experiments? (20-25 per plan)
-- [ ] Video format: Screen recording + voiceover or live demo?
 
 ---
 
@@ -316,9 +318,8 @@ pip install -r requirements-dev.txt
 |-------|-----------|--------|--------|
 | Phase 1: Setup & Foundation | 1.5 hrs | ~2 hrs | ✅ Complete |
 | Phase 2: Testing | 1.5 hrs | ~1 hr | ✅ Complete |
-| Phase 3: Examples | 0.5 hrs | - | 🔄 Next |
-| Phase 4: Experiments | 2 hrs | - | ⏳ Pending |
-| Phase 5: Documentation | 1 hr | - | ⏳ Pending |
+| Phase 3: Experimental Framework | 2 hrs | - | 🔄 Next |
+| Phase 4: Documentation & Video | 1.5 hrs | - | ⏳ Pending |
 | **Total** | **6.5 hrs** | **~3 hrs** | **46% complete** |
 
 ---
