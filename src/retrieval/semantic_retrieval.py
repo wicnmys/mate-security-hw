@@ -1,25 +1,24 @@
-"""Semantic retrieval using embeddings for table selection."""
+"""Semantic retrieval using local embeddings for table selection."""
 
-import os
 import pickle
 from pathlib import Path
 from typing import Dict, List, Any, Optional
 import numpy as np
-from openai import OpenAI
+from sentence_transformers import SentenceTransformer
 
 
 class SemanticRetrieval:
     """
     Semantic retrieval using embedding-based similarity search.
 
-    Uses OpenAI embeddings to find tables most semantically similar
-    to the user's question.
+    Uses sentence-transformers (local embeddings) to find tables most
+    semantically similar to the user's question. No API calls required.
     """
 
     def __init__(
         self,
         schemas: Dict[str, Any],
-        embedding_model: str = "text-embedding-3-small",
+        embedding_model: str = "multi-qa-mpnet-base-dot-v1",
         cache_path: Optional[str] = None
     ):
         """
@@ -27,19 +26,17 @@ class SemanticRetrieval:
 
         Args:
             schemas: Dictionary mapping table names to schema definitions
-            embedding_model: OpenAI embedding model to use
-            cache_path: Optional path to cache embeddings (saves API calls)
+            embedding_model: Sentence-transformers model name (default: multi-qa-mpnet-base-dot-v1)
+            cache_path: Optional path to cache embeddings (saves computation time)
         """
         self.schemas = schemas
-        self.embedding_model = embedding_model
+        self.embedding_model_name = embedding_model
         self.cache_path = cache_path
 
-        # Initialize OpenAI client
-        api_key = os.getenv("OPENAI_API_KEY")
-        if not api_key:
-            raise ValueError("OPENAI_API_KEY environment variable not set")
-
-        self.client = OpenAI(api_key=api_key)
+        # Initialize sentence-transformers model
+        print(f"Loading embedding model: {embedding_model}...")
+        self.model = SentenceTransformer(embedding_model)
+        print(f"✓ Model loaded")
 
         # Pre-compute table embeddings
         self.table_embeddings: Dict[str, np.ndarray] = {}
@@ -53,26 +50,45 @@ class SemanticRetrieval:
             try:
                 with open(self.cache_path, 'rb') as f:
                     cache = pickle.load(f)
-                    self.table_embeddings = cache['embeddings']
-                    self.table_descriptions = cache['descriptions']
-                    print(f"Loaded embeddings from cache: {self.cache_path}")
-                    return
+
+                    # Verify cache is for the same model
+                    if cache.get('model_name') == self.embedding_model_name:
+                        self.table_embeddings = cache['embeddings']
+                        self.table_descriptions = cache['descriptions']
+                        print(f"✓ Loaded embeddings from cache: {self.cache_path}")
+                        return
+                    else:
+                        print(f"⚠️  Cache model mismatch, recomputing embeddings...")
             except Exception as e:
-                print(f"Warning: Could not load cache: {e}")
+                print(f"⚠️  Could not load cache: {e}")
 
         # Compute embeddings for each table
         from src.utils.schema_loader import get_table_description
 
         print(f"Computing embeddings for {len(self.schemas)} tables...")
 
+        # Collect all descriptions
+        descriptions = []
+        table_names = []
+
         for table_name, schema in self.schemas.items():
-            # Create description for embedding
             description = get_table_description(table_name, schema)
             self.table_descriptions[table_name] = description
+            descriptions.append(description)
+            table_names.append(table_name)
 
-            # Get embedding
-            embedding = self._embed_text(description)
+        # Batch encode all descriptions (much faster than one-by-one)
+        embeddings = self.model.encode(
+            descriptions,
+            show_progress_bar=True,
+            convert_to_numpy=True
+        )
+
+        # Store embeddings
+        for table_name, embedding in zip(table_names, embeddings):
             self.table_embeddings[table_name] = embedding
+
+        print(f"✓ Computed {len(self.table_embeddings)} embeddings")
 
         # Save to cache
         if self.cache_path:
@@ -82,16 +98,17 @@ class SemanticRetrieval:
 
                 with open(self.cache_path, 'wb') as f:
                     pickle.dump({
+                        'model_name': self.embedding_model_name,
                         'embeddings': self.table_embeddings,
                         'descriptions': self.table_descriptions
                     }, f)
-                print(f"Saved embeddings to cache: {self.cache_path}")
+                print(f"✓ Saved embeddings to cache: {self.cache_path}")
             except Exception as e:
-                print(f"Warning: Could not save cache: {e}")
+                print(f"⚠️  Could not save cache: {e}")
 
     def _embed_text(self, text: str) -> np.ndarray:
         """
-        Get embedding for text using OpenAI API.
+        Get embedding for text using sentence-transformers.
 
         Args:
             text: Text to embed
@@ -99,11 +116,12 @@ class SemanticRetrieval:
         Returns:
             Embedding vector as numpy array
         """
-        response = self.client.embeddings.create(
-            model=self.embedding_model,
-            input=text
+        embedding = self.model.encode(
+            text,
+            convert_to_numpy=True,
+            show_progress_bar=False
         )
-        return np.array(response.data[0].embedding)
+        return embedding
 
     def _cosine_similarity(self, a: np.ndarray, b: np.ndarray) -> float:
         """

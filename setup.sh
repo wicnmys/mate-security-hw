@@ -87,27 +87,15 @@ fi
 # Check for API keys
 echo "Checking environment variables..."
 
-if [ -z "$OPENAI_API_KEY" ] && [ ! -f ".env" ]; then
-    echo "⚠️  OPENAI_API_KEY not set"
+# Check for Anthropic API key (required for Claude agent)
+if [ -z "$ANTHROPIC_API_KEY" ] && [ ! -f ".env" ]; then
+    echo "⚠️  ANTHROPIC_API_KEY not set (required for Claude)"
     echo ""
-    echo "   Create a .env file with your API keys:"
-    echo "   echo 'OPENAI_API_KEY=your_key_here' > .env"
+    echo "   Create a .env file with your API key:"
+    echo "   echo 'ANTHROPIC_API_KEY=your_key_here' > .env"
     echo ""
     echo "   Or export directly:"
-    echo "   export OPENAI_API_KEY='your_key_here'"
-    echo ""
-elif [ -f ".env" ]; then
-    echo "✓ .env file found"
-else
-    echo "✓ OPENAI_API_KEY is set"
-fi
-
-# Check for Anthropic API key (needed for Claude)
-if [ -z "$ANTHROPIC_API_KEY" ] && [ ! -f ".env" ]; then
-    echo "⚠️  ANTHROPIC_API_KEY not set (needed for Claude)"
-    echo ""
-    echo "   Add to .env file:"
-    echo "   echo 'ANTHROPIC_API_KEY=your_key_here' >> .env"
+    echo "   export ANTHROPIC_API_KEY='your_key_here'"
     echo ""
 elif [ -f ".env" ]; then
     # Check if ANTHROPIC_API_KEY is in .env
@@ -120,6 +108,9 @@ elif [ -f ".env" ]; then
 else
     echo "✓ ANTHROPIC_API_KEY is set"
 fi
+
+echo ""
+echo "Note: Embeddings use sentence-transformers (local, no API key needed)"
 
 echo ""
 
@@ -143,10 +134,9 @@ echo "Next steps:"
 echo "  1. Activate virtual environment:"
 echo "     source .venv/bin/activate"
 echo ""
-echo "  2. Set your API keys (if not done already):"
-echo "     export OPENAI_API_KEY='your_key_here'"
+echo "  2. Set your Anthropic API key (if not done already):"
 echo "     export ANTHROPIC_API_KEY='your_key_here'"
-echo "     # Or create .env file"
+echo "     # Or create .env file with ANTHROPIC_API_KEY"
 echo ""
 echo "  3. Run the agent:"
 echo "     python main.py \"Show me high-severity events\""
