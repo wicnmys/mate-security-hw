@@ -2,7 +2,8 @@
 
 import os
 from typing import Dict, Any
-from agno import Agent
+from agno.agent import Agent
+from agno.models.anthropic import Claude
 from dotenv import load_dotenv
 
 from src.agents.base import BaseAgent, SQLQueryResponse
@@ -26,7 +27,7 @@ class SemanticAgent(BaseAgent):
     def __init__(
         self,
         schema_path: str,
-        model: str = "claude-3-5-sonnet-20241022",
+        model: str = "claude-sonnet-4-5",
         embedding_cache_path: str = "embeddings_cache/table_embeddings.pkl",
         top_k_tables: int = 5
     ):
@@ -55,9 +56,9 @@ class SemanticAgent(BaseAgent):
         # Initialize Agno agent
         self.agent = Agent(
             name="sql_query_generator",
-            model=model,
+            model=Claude(id=model),
             instructions=self._get_instructions(),
-            response_model=SQLQueryResponse,
+            output_schema=SQLQueryResponse,
             markdown=True
         )
 
@@ -120,7 +121,7 @@ Return your response in the structured format with query, explanation, tables_us
             schema_context = self._build_schema_context(relevant_tables)
 
             # Step 3: Generate SQL using Agno agent
-            response = self.agent.run(
+            run_output = self.agent.run(
                 f"""Question: {question}
 
 Available Tables:
@@ -128,6 +129,9 @@ Available Tables:
 
 Generate a SQL query to answer this question."""
             )
+
+            # Extract the structured response from RunOutput
+            response = run_output.content
 
             # Step 4: Validate the generated query
             validation = self.validator.validate(response.query, strict=False)

@@ -46,8 +46,8 @@ Examples:
     parser.add_argument(
         "--model",
         type=str,
-        default="claude-3-5-sonnet-20241022",
-        help="LLM model to use (default: claude-3-5-sonnet-20241022)"
+        default="claude-sonnet-4-5",
+        help="LLM model to use (default: claude-sonnet-4-5)"
     )
 
     parser.add_argument(
