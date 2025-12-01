@@ -531,6 +531,12 @@ We expect Experiment 2 to:
 
 **IMPORTANT:** Follow this checklist to ensure nothing is missed. This was created based on lessons learned from Experiment 1.
 
+### Critical Notes Before Starting
+
+1. **Preserve Previous Results**: When running experiments, use unique output file names that won't overwrite previous results. Use descriptive names like `react_v2_experiment_results.json` instead of generic `experiment_results.json`.
+
+2. **Git Commits**: Make meaningful commits at logical checkpoints throughout implementation. Do NOT include co-authorship attribution in commit messages - commits should appear as solely from the developer.
+
 ### Phase 1: Implementation
 
 - [ ] **Create the agent file**: `src/agents/react_agent_v2.py`
