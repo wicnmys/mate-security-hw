@@ -54,8 +54,7 @@ class KeywordAgent(BaseAgent):
             model=Claude(
                 id=model,
                 cache_system_prompt=True,  # Cache instructions (never change)
-                cache_tool_definitions=True,  # Cache output schema (never changes)
-                cache_ttl="1h"  # Cache for 1 hour
+                cache_ttl=3600  # Cache for 1 hour (in seconds)
             ),
             instructions=self._get_instructions(),
             output_schema=SQLQueryResponse,

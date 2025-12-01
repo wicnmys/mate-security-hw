@@ -30,8 +30,8 @@ class LLMJudge:
             model=Claude(
                 id=model,
                 cache_system_prompt=True,  # Cache evaluation criteria
-                cache_tool_definitions=True,  # Cache output schema
-                cache_ttl="1h"  # Cache for 1 hour
+                
+                cache_ttl=3600  # Cache for 1 hour (in seconds)
             ),
             instructions=self._get_judge_instructions(),
             output_schema=CorrectnessEvaluation,

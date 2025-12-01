@@ -10,9 +10,13 @@ from typing import List, Dict, Any
 from agno.agent import Agent
 from agno.models.anthropic import Claude
 from pydantic import BaseModel, Field
+from dotenv import load_dotenv
 
 from src.utils.schema_loader import load_schemas
 from src.utils.validator import SQLValidator
+
+# Load environment variables
+load_dotenv()
 
 
 class TestCase(BaseModel):
@@ -50,8 +54,7 @@ class TestCaseGenerator:
             model=Claude(
                 id=model,
                 cache_system_prompt=True,  # Cache generation instructions
-                cache_tool_definitions=True,  # Cache output schema
-                cache_ttl="1h"  # Cache for 1 hour
+                cache_ttl=3600  # Cache for 1 hour (in seconds)
             ),
             instructions=self._get_generator_instructions(),
             output_schema=TestCaseBatch,

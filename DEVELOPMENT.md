@@ -361,6 +361,67 @@ d3f1c8a Implement keyword agent for comparison experiments
 
 **Updated Test Count:** 153 tests passing (138 from Phase 2 + 15 keyword agent tests)
 
+**3. Integration Tests for API Contract Validation**
+- ✅ **Integration Test Suite** - 9 tests across 6 files
+  - Purpose: Validate against real Anthropic API contracts (catch errors that mocks miss)
+  - No mocking - actually instantiate `Claude`, `SemanticAgent`, `KeywordAgent`, `LLMJudge`
+  - Marked with `@pytest.mark.integration` for selective execution
+  - Skip if `ANTHROPIC_API_KEY` not set (safe for CI without API access)
+
+- ✅ **Test Files Created:**
+  1. `tests/integration/__init__.py` - Package initialization
+  2. `tests/integration/conftest.py` - Shared fixtures
+  3. `tests/integration/test_caching_parameters.py` - 3 tests validating Anthropic caching API
+  4. `tests/integration/test_agent_initialization.py` - 4 tests (2 initialization + 2 query generation)
+  5. `tests/integration/test_llm_judge.py` - 2 tests
+  6. `pytest.ini` - Pytest marker configuration
+
+- ✅ **Key Testing Pattern: Configurable Model Fixture**
+  ```python
+  @pytest.fixture
+  def integration_model():
+      """Defaults to 'claude-haiku-4-5' (cheap and fast).
+      Override with INTEGRATION_TEST_MODEL environment variable."""
+      return os.getenv('INTEGRATION_TEST_MODEL', 'claude-haiku-4-5')
+  ```
+  - All 9 tests accept `integration_model` parameter (no hardcoded models)
+  - Default: Claude Haiku (~$0.10 per full test run)
+  - Can override for Sonnet testing: `INTEGRATION_TEST_MODEL=claude-sonnet-4-5`
+
+- ✅ **Haiku Structured Output Limitation Handled:**
+  - Haiku doesn't support `output_format` parameter (required for Pydantic schemas)
+  - Query generation tests skip gracefully with TODO comments:
+  ```python
+  # TODO: Revisit this limitation - as of 2025-12-01, Haiku doesn't support structured outputs (output_format)
+  # Check if newer versions of Haiku support this feature and remove skip if so
+  if 'haiku' in integration_model.lower():
+      pytest.skip(f"Skipping: {integration_model} doesn't support structured outputs")
+  ```
+  - With Haiku: 6 passed, 3 skipped (initialization tests pass, query tests skip)
+  - With Sonnet: 9 passed, 0 skipped (all tests pass)
+
+- ✅ **Agno 2.3.4 Caching Parameters Validated:**
+  - Supported: `cache_system_prompt=True`, `cache_ttl=3600` (integer seconds)
+  - NOT supported: `cache_tool_definitions` (raises TypeError as expected)
+  - Integration test explicitly validates these contracts
+
+- ✅ **Bug Fix: Missing load_dotenv() in generate_test_cases.py**
+  - Issue: Integration tests worked (agents import modules that call `load_dotenv()`)
+  - But `generate_test_cases.py` failed with "ANTHROPIC_API_KEY not set"
+  - Root cause: Script doesn't import agent modules, so `.env` never loaded
+  - Fix: Added explicit `load_dotenv()` call at top of script
+  - Lesson: Standalone scripts need explicit environment loading
+
+**Updated Test Count:** 168 tests total
+- 159 unit tests (all passing)
+- 9 integration tests (6 passed, 3 skipped on Haiku; 9 passed on Sonnet)
+
+**Cost Estimates:**
+- Unit tests: Free (all mocked, no API calls)
+- Integration tests (Haiku): ~$0.10 per run
+- Integration tests (Sonnet): ~$0.30 per run
+- Recommendation: Use Haiku for regular testing, Sonnet for final validation
+
 #### Why This Framework Matters for Mate Security
 
 **1. Data-Driven Decision Making:**
@@ -485,12 +546,17 @@ pip install -r requirements-dev.txt
 6. **Mocking strategy:** All external dependencies mocked = fast, reliable, no API keys needed
 7. **Test-driven bug finding:** Writing tests revealed edge cases we hadn't considered (e.g., arbitrary field caps in schema loader)
 8. **Prompt caching:** Agno's built-in Anthropic prompt caching (via `cache_system_prompt=True`) is much simpler than custom caching - reduces costs by ~90% on cached tokens with minimal code changes
+9. **Integration tests:** Caught API contract violations that unit tests with mocks missed (e.g., `cache_tool_definitions` parameter not supported)
+10. **Configurable test fixtures:** `integration_model` fixture allows cost-effective testing with Haiku while supporting Sonnet validation
 
 ### Challenges
 1. **Test fixture design:** Initial test for truncation failed because sample schema was too small - had to create larger test data
 2. **Tokenizer behavior:** Underscores treated as word characters by `\w` regex, not as delimiters - tests needed adjustment
 3. **Generalization requirement:** Initial experiment runner hardcoded agents; refactored to use dependency injection after feedback
 4. **Balancing comprehensiveness:** Report generator creates very detailed output - may need simplification for readability
+5. **Haiku model limitations:** Discovered Haiku doesn't support structured outputs during integration testing - added graceful skip logic with TODOs for future revisiting
+6. **Environment loading inconsistency:** Integration tests worked but standalone scripts failed - learned that `load_dotenv()` must be explicit in scripts that don't import agent modules
+7. **Hardcoded model references:** Had to scan all files and eliminate hardcoded model strings from test code to ensure configurability
 
 ### For Video Demo
 **Key Messages to Emphasize:**
@@ -501,4 +567,4 @@ pip install -r requirements-dev.txt
 
 ---
 
-*Last Updated: 2025-12-01 - Phase 3 Complete (153 tests passing, experimental framework ready)*
+*Last Updated: 2025-12-01 - Phase 3 Complete (168 tests: 159 unit + 9 integration, experimental framework ready, test case generation in progress)*

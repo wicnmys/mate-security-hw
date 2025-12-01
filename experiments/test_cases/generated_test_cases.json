@@ -1,0 +1,249 @@
+{
+  "metadata": {
+    "generated_at": "2025-12-01T14:59:45.519077",
+    "generator_model": "claude-sonnet-4-5",
+    "total_cases": 21,
+    "complexity_distribution": {
+      "simple": 10,
+      "medium": 9,
+      "complex": 2
+    }
+  },
+  "test_cases": [
+    {
+      "id": "test_sim_001",
+      "complexity": "simple",
+      "category": "endpoint",
+      "question": "Show me all critical severity endpoint events from the last 24 hours",
+      "reference_sql": "SELECT * FROM endpoint_events WHERE severity = 'critical' AND timestamp >= NOW() - INTERVAL '24 hours'",
+      "reference_tables": [
+        "endpoint_events"
+      ],
+      "semantic_intent": "Retrieve all critical endpoint security events within the past day for immediate investigation"
+    },
+    {
+      "id": "test_sim_002",
+      "complexity": "simple",
+      "category": "network",
+      "question": "Find all blocked firewall events",
+      "reference_sql": "SELECT * FROM firewall_events WHERE action = 'deny'",
+      "reference_tables": [
+        "firewall_events"
+      ],
+      "semantic_intent": "List all firewall events where connections were blocked to identify potential threats"
+    },
+    {
+      "id": "test_sim_003",
+      "complexity": "simple",
+      "category": "authentication",
+      "question": "What authentication failures happened today",
+      "reference_sql": "SELECT * FROM authentication_events WHERE status = 'failure' AND timestamp >= CURRENT_DATE",
+      "reference_tables": [
+        "authentication_events"
+      ],
+      "semantic_intent": "Retrieve failed authentication attempts from today to detect potential unauthorized access attempts"
+    },
+    {
+      "id": "test_sim_004",
+      "complexity": "simple",
+      "category": "email",
+      "question": "Show me all phishing emails detected this week",
+      "reference_sql": "SELECT * FROM email_events WHERE threat_detected = true AND threat_type = 'phishing' AND timestamp >= CURRENT_DATE - INTERVAL '7 days'",
+      "reference_tables": [
+        "email_events"
+      ],
+      "semantic_intent": "Find phishing email threats detected in the past week for security awareness analysis"
+    },
+    {
+      "id": "test_sim_005",
+      "complexity": "simple",
+      "category": "security_ops",
+      "question": "List all high severity security alerts that are still open",
+      "reference_sql": "SELECT * FROM security_alerts WHERE severity = 'high' AND status = 'open'",
+      "reference_tables": [
+        "security_alerts"
+      ],
+      "semantic_intent": "Retrieve unresolved high severity alerts requiring immediate attention"
+    },
+    {
+      "id": "test_sim_006",
+      "complexity": "simple",
+      "category": "dlp",
+      "question": "Find all DLP violations involving credit card data",
+      "reference_sql": "SELECT * FROM dlp_events WHERE data_type = 'credit_card' OR content_matches LIKE '%credit card%'",
+      "reference_tables": [
+        "dlp_events"
+      ],
+      "semantic_intent": "Identify data loss prevention events related to credit card information exposure"
+    },
+    {
+      "id": "test_sim_007",
+      "complexity": "simple",
+      "category": "endpoint",
+      "question": "Show me processes executed by SYSTEM account",
+      "reference_sql": "SELECT * FROM process_execution WHERE user_name = 'SYSTEM'",
+      "reference_tables": [
+        "process_execution"
+      ],
+      "semantic_intent": "List all processes running under SYSTEM privileges for privilege analysis"
+    },
+    {
+      "id": "test_sim_008",
+      "complexity": "simple",
+      "category": "vulnerability",
+      "question": "What critical vulnerabilities were found on production servers",
+      "reference_sql": "SELECT * FROM vulnerability_scans WHERE severity = 'critical' AND hostname LIKE '%prod%'",
+      "reference_tables": [
+        "vulnerability_scans"
+      ],
+      "semantic_intent": "Retrieve critical vulnerabilities detected on production systems requiring immediate patching"
+    },
+    {
+      "id": "test_sim_009",
+      "complexity": "simple",
+      "category": "cloud",
+      "question": "Find all AWS console login events",
+      "reference_sql": "SELECT * FROM cloud_audit_logs WHERE cloud_provider = 'aws' AND service = 'signin' AND action = 'ConsoleLogin'",
+      "reference_tables": [
+        "cloud_audit_logs"
+      ],
+      "semantic_intent": "Track AWS Management Console login activity for cloud access monitoring"
+    },
+    {
+      "id": "test_sim_010",
+      "complexity": "simple",
+      "category": "application",
+      "question": "Show me all SQL injection attacks detected by the WAF",
+      "reference_sql": "SELECT * FROM waf_events WHERE attack_type = 'sql_injection'",
+      "reference_tables": [
+        "waf_events"
+      ],
+      "semantic_intent": "Identify SQL injection attack attempts blocked by the web application firewall"
+    },
+    {
+      "id": "test_med_001",
+      "complexity": "medium",
+      "category": "network",
+      "question": "Show me all blocked outbound connections in the last 24 hours, sorted by source IP",
+      "reference_sql": "SELECT * FROM firewall_events WHERE action = 'deny' AND direction = 'outbound' AND timestamp >= NOW() - INTERVAL '24 hours' ORDER BY source_ip",
+      "reference_tables": [
+        "firewall_events"
+      ],
+      "semantic_intent": "Retrieve all denied outbound firewall events from the past day, organized by source IP address to identify potential data exfiltration attempts or malware callback attempts"
+    },
+    {
+      "id": "test_med_002",
+      "complexity": "medium",
+      "category": "endpoint",
+      "question": "Which hostnames had the most high-severity endpoint events this week?",
+      "reference_sql": "SELECT hostname, COUNT(*) as event_count FROM endpoint_events WHERE severity IN ('high', 'critical') AND timestamp >= DATE_TRUNC('week', NOW()) GROUP BY hostname ORDER BY event_count DESC",
+      "reference_tables": [
+        "endpoint_events"
+      ],
+      "semantic_intent": "Aggregate high and critical severity endpoint events by hostname for the current week to identify systems with the most security issues"
+    },
+    {
+      "id": "test_med_003",
+      "complexity": "medium",
+      "category": "authentication",
+      "question": "List all failed SSH authentication attempts grouped by username with counts",
+      "reference_sql": "SELECT user_name, COUNT(*) as failed_attempts FROM authentication_events WHERE event_type = 'ssh' AND status = 'failure' GROUP BY user_name ORDER BY failed_attempts DESC",
+      "reference_tables": [
+        "authentication_events"
+      ],
+      "semantic_intent": "Count failed SSH login attempts per user to identify potential brute force attacks or compromised credentials"
+    },
+    {
+      "id": "test_med_004",
+      "complexity": "medium",
+      "category": "network",
+      "question": "What are the top 10 most queried domains in the last hour?",
+      "reference_sql": "SELECT queried_domain, COUNT(*) as query_count FROM dns_queries WHERE timestamp >= NOW() - INTERVAL '1 hour' GROUP BY queried_domain ORDER BY query_count DESC LIMIT 10",
+      "reference_tables": [
+        "dns_queries"
+      ],
+      "semantic_intent": "Identify the most frequently queried DNS domains in the past hour to detect potential DNS tunneling, DGA activity, or legitimate high-traffic domains"
+    },
+    {
+      "id": "test_med_005",
+      "complexity": "medium",
+      "category": "vulnerability",
+      "question": "Show me all critical vulnerability findings discovered in the last 7 days by severity",
+      "reference_sql": "SELECT hostname, cve_id, cvss_score, vulnerability_name FROM vulnerability_scans WHERE severity = 'critical' AND timestamp >= NOW() - INTERVAL '7 days' ORDER BY cvss_score DESC",
+      "reference_tables": [
+        "vulnerability_scans"
+      ],
+      "semantic_intent": "Retrieve all critical severity vulnerabilities identified in recent scans, sorted by CVSS score to prioritize remediation efforts"
+    },
+    {
+      "id": "test_med_006",
+      "complexity": "medium",
+      "category": "dlp",
+      "question": "Which users accessed the most sensitive files this month according to DLP?",
+      "reference_sql": "SELECT user_name, COUNT(*) as access_count FROM dlp_events WHERE policy_name ILIKE '%sensitive%' AND timestamp >= DATE_TRUNC('month', NOW()) GROUP BY user_name ORDER BY access_count DESC",
+      "reference_tables": [
+        "dlp_events"
+      ],
+      "semantic_intent": "Aggregate DLP events related to sensitive data access by user for the current month to identify potential insider threats or excessive access"
+    },
+    {
+      "id": "test_med_007",
+      "complexity": "medium",
+      "category": "cloud",
+      "question": "Show all cloud resource changes made by users in production environments today",
+      "reference_sql": "SELECT * FROM cloud_resource_changes WHERE user_name IS NOT NULL AND environment = 'production' AND timestamp >= DATE_TRUNC('day', NOW()) ORDER BY timestamp DESC",
+      "reference_tables": [
+        "cloud_resource_changes"
+      ],
+      "semantic_intent": "List all infrastructure changes made by human users (not service accounts) in production cloud environments today for change tracking and audit purposes"
+    },
+    {
+      "id": "test_med_008",
+      "complexity": "medium",
+      "category": "application",
+      "question": "What are the top 5 blocked URLs by the WAF in the past week?",
+      "reference_sql": "SELECT url, COUNT(*) as block_count FROM waf_events WHERE action = 'block' AND timestamp >= NOW() - INTERVAL '7 days' GROUP BY url ORDER BY block_count DESC LIMIT 5",
+      "reference_tables": [
+        "waf_events"
+      ],
+      "semantic_intent": "Identify the most frequently blocked URLs by the web application firewall to understand attack patterns and potential false positives"
+    },
+    {
+      "id": "test_med_009",
+      "complexity": "medium",
+      "category": "email",
+      "question": "List all email messages with malware attachments received in the last 3 days",
+      "reference_sql": "SELECT * FROM email_events WHERE direction = 'inbound' AND threat_type = 'malware' AND timestamp >= NOW() - INTERVAL '3 days' ORDER BY timestamp DESC",
+      "reference_tables": [
+        "email_events"
+      ],
+      "semantic_intent": "Retrieve all inbound emails containing malware detected in the past three days to assess phishing campaign activity and user exposure"
+    },
+    {
+      "id": "test_com_001",
+      "complexity": "complex",
+      "category": "endpoint",
+      "question": "Show me all endpoints that executed suspicious processes and then had outbound connections to domains flagged in our threat intelligence within the same hour",
+      "reference_sql": "SELECT DISTINCT pe.hostname, pe.process_name, pe.command_line, nt.destination_ip, nt.destination_domain, ti.threat_type, ti.confidence_score FROM process_execution pe JOIN network_traffic nt ON pe.hostname = nt.source_hostname AND nt.timestamp BETWEEN pe.timestamp AND pe.timestamp + INTERVAL '1 hour' JOIN threat_intelligence ti ON nt.destination_domain = ti.indicator_value WHERE ti.indicator_type = 'domain' AND pe.process_name IN ('powershell.exe', 'cmd.exe', 'wscript.exe', 'cscript.exe', 'mshta.exe') AND pe.timestamp >= NOW() - INTERVAL '7 days' ORDER BY pe.timestamp DESC",
+      "reference_tables": [
+        "process_execution",
+        "network_traffic",
+        "threat_intelligence"
+      ],
+      "semantic_intent": "Correlate suspicious process execution with subsequent network connections to known malicious domains to identify potential command and control activity or data exfiltration"
+    },
+    {
+      "id": "test_com_003",
+      "complexity": "complex",
+      "category": "cloud",
+      "question": "Which cloud resources were created or modified by users whose endpoints later triggered high-severity security alerts involving file encryption or ransomware activity",
+      "reference_sql": "SELECT DISTINCT crc.cloud_provider, crc.account_id, crc.resource_type, crc.resource_id, crc.change_type, crc.user_name, crc.timestamp as change_timestamp, sa.alert_name, sa.severity, sa.detection_timestamp, ee.event_type as endpoint_event FROM cloud_resource_changes crc JOIN security_alerts sa ON crc.user_name = sa.user_name AND sa.detection_timestamp >= crc.timestamp AND sa.detection_timestamp <= crc.timestamp + INTERVAL '72 hours' JOIN endpoint_events ee ON sa.hostname = ee.hostname AND ee.timestamp BETWEEN sa.detection_timestamp - INTERVAL '1 hour' AND sa.detection_timestamp WHERE sa.severity IN ('high', 'critical') AND (sa.alert_name ILIKE '%ransomware%' OR sa.alert_name ILIKE '%encryption%' OR ee.event_type ILIKE '%file_encryption%') AND crc.timestamp >= NOW() - INTERVAL '30 days' ORDER BY crc.timestamp DESC",
+      "reference_tables": [
+        "cloud_resource_changes",
+        "security_alerts",
+        "endpoint_events"
+      ],
+      "semantic_intent": "Investigate potential insider threats or compromised accounts by correlating cloud infrastructure changes with subsequent ransomware activity on user endpoints"
+    }
+  ]
+}
