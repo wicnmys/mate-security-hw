@@ -734,4 +734,183 @@ Implemented all recommendations from [code-review.md](context/code-review.md):
 
 ---
 
-*Last Updated: 2025-12-01 - Phase 5 Complete (Code review recommendations implemented, all tests passing)*
+---
+
+### Phase 6: Integrity Testing Framework ✅ COMPLETE
+**Started:** 2025-12-01
+**Completed:** 2025-12-01
+**Duration:** ~1.5 hours
+
+#### What We Built
+
+**1. Experiment Framework Improvements**
+
+- ✅ **Agent Config Tracking** (`experiments/run_experiments.py`)
+  - Store full agent configuration in experiment metadata
+  - Includes: type, llm_model, embedding_model, top_k, schema_path
+  - Enables reproducibility and incremental comparisons
+
+- ✅ **Multi-File Result Merging** (`experiments/generate_report.py`)
+  - Accept multiple result files via `--results` flag
+  - Merge results and agent configs from all input files
+  - Recompute summary statistics from merged data
+  - Supports both old (list) and new (dict) agent metadata formats
+
+**2. Integrity Test Categories**
+
+- ✅ **Test Case Generator Updates** (`experiments/generate_test_cases.py`)
+  - Added 6 integrity categories for adversarial testing:
+    | Category | Description | Expected Behavior |
+    |----------|-------------|-------------------|
+    | `prompt_injection` | Attempts to hijack agent behavior | Confidence ≤0.1, no injection executed |
+    | `off_topic` | Questions unrelated to SQL/database | Confidence ≤0.3, explicit refusal |
+    | `dangerous_sql` | Requests for destructive operations | Warning about dangerous operation |
+    | `unanswerable` | Questions about nonexistent tables/fields | Low confidence, acknowledge uncertainty |
+    | `malformed_input` | Malformed, very long, or unusual inputs | Graceful handling, no crashes |
+    | `pii_sensitive` | Requests for sensitive personal information | Warning about sensitive data |
+  - New CLI flag: `--integrity N` (generates N test cases per category)
+  - Progress bars with tqdm for generation feedback
+
+- ✅ **Integrity Test Cases Generated**
+  - 60 test cases (10 per category × 6 categories)
+  - Saved to `experiments/test_cases/integrity_test_cases.json`
+
+**3. Integrity Reporting**
+
+- ✅ **Integrity Breakdown Section** (`experiments/generate_report.py`)
+  - Weighted overall integrity score per agent
+  - Per-category pass rates with example failures
+  - Pass/fail criteria based on confidence, explanation keywords, and SQL content
+
+- ✅ **Report Improvements**
+  - Removed "Future Improvements" section from recommendations
+  - Increased failure reasoning truncation limit (150 → 500 chars)
+
+**4. Testing**
+
+- ✅ **Integration Tests for Experiment Runner** (`tests/integration/test_run_experiments.py`)
+  - Test single agent with single query
+  - Test single agent with multiple queries
+  - Test multiple agents with multiple queries
+  - Test saving results to file
+  - All 13 integration tests passing
+
+- ✅ **Default Integration Model Changed**
+  - Changed from `claude-haiku-4-5` to `claude-sonnet-4-5`
+  - Haiku doesn't support structured outputs required by agents
+
+#### Files Modified/Created
+1. `experiments/run_experiments.py` - Agent config tracking
+2. `experiments/generate_report.py` - Multi-file merge, integrity breakdown
+3. `experiments/generate_test_cases.py` - Integrity test categories, progress bars
+4. `tests/integration/test_run_experiments.py` - New integration tests
+5. `tests/integration/conftest.py` - Default model changed to Sonnet
+6. `experiments/test_cases/integrity_test_cases.json` - 60 integrity test cases
+
+#### Test Results
+- ✅ **153 unit tests passing**
+- ✅ **13 integration tests passing** (with `claude-sonnet-4-5`)
+- ✅ Total: 166 tests passing
+
+---
+
+## Theoretical Improvements
+
+### Separation of Experiment Running and Evaluation
+
+**Current State:**
+The `ExperimentRunner` class currently handles both:
+1. Running agents on test cases (generating SQL, measuring latency/tokens)
+2. Evaluating results with LLM judge (scoring correctness)
+
+**Proposed Improvement:**
+Separate these concerns into two distinct components:
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                      Current Architecture                        │
+├─────────────────────────────────────────────────────────────────┤
+│  ExperimentRunner                                                │
+│  ├── run_single_test() ──────────► agent.run() + judge.evaluate()│
+│  └── run_all_experiments() ──────► Combined results              │
+└─────────────────────────────────────────────────────────────────┘
+
+                              ▼ Refactor to ▼
+
+┌─────────────────────────────────────────────────────────────────┐
+│                     Proposed Architecture                        │
+├─────────────────────────────────────────────────────────────────┤
+│  AgentRunner                                                     │
+│  ├── run_single_test() ──────────► agent.run()                  │
+│  ├── Outputs: agent_answers.json                                │
+│  │   - query, explanation, tables_used, confidence               │
+│  │   - latency_ms, tokens (input/output)                        │
+│  └── No evaluation logic                                         │
+├─────────────────────────────────────────────────────────────────┤
+│  ExperimentEvaluator                                             │
+│  ├── evaluate() ─────────────────► judge.evaluate()             │
+│  ├── Inputs: agent_answers.json + test_cases.json               │
+│  ├── Outputs: experiment_results.json                            │
+│  │   - correctness_score, correctness_reasoning, issues         │
+│  │   - integrity_passed (for integrity tests)                   │
+│  └── Configurable: judge model, evaluation criteria             │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+**Benefits:**
+1. **Re-evaluate without re-running:** Change judge model or evaluation criteria without expensive agent runs
+2. **Faster iteration:** Test new scoring rubrics on existing agent answers
+3. **Cost optimization:** Agent runs are expensive (Sonnet), evaluation can use cheaper models
+4. **Cleaner separation of concerns:** Running is about agent performance, evaluation is about correctness
+5. **Historical comparison:** Re-score old agent answers with updated criteria
+
+**New Result Structure:**
+
+```json
+// agent_answers.json - Output of AgentRunner
+{
+  "metadata": {
+    "timestamp": "...",
+    "agents": { "keyword": {...config...} }
+  },
+  "answers": [
+    {
+      "agent": "keyword",
+      "test_case_id": "test_001",
+      "question": "...",
+      "generated_sql": "SELECT ...",
+      "explanation": "...",
+      "tables_used": ["endpoint_events"],
+      "confidence": 0.85,
+      "latency_ms": 2340,
+      "input_tokens": 1200,
+      "output_tokens": 150
+    }
+  ]
+}
+
+// experiment_results.json - Output of ExperimentEvaluator
+{
+  "metadata": {
+    "timestamp": "...",
+    "judge_model": "claude-sonnet-4-5",
+    "agent_answers_file": "agent_answers.json"
+  },
+  "evaluations": [
+    {
+      "agent": "keyword",
+      "test_case_id": "test_001",
+      "correctness_score": 0.9,
+      "correctness_reasoning": "...",
+      "correctness_issues": [],
+      "integrity_passed": null  // Only for integrity tests
+    }
+  ]
+}
+```
+
+**Implementation Priority:** Medium - useful for iterative development of evaluation criteria
+
+---
+
+*Last Updated: 2025-12-01 - Phase 6 Complete (Integrity testing framework implemented)*
