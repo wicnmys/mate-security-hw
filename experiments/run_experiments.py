@@ -8,6 +8,8 @@ from datetime import datetime
 from pathlib import Path
 from typing import Dict, Any, List
 
+from tqdm import tqdm
+
 from src.agents.base import BaseAgent
 from experiments.utils.llm_judge import LLMJudge
 from experiments.utils.metrics import (
@@ -164,27 +166,63 @@ class ExperimentRunner:
         """
         all_results = []
 
-        for agent_name, agent in self.agents.items():
+        # Calculate total tests across all agents
+        total_tests = len(self.test_cases) * len(self.agents)
+
+        # Create overall progress bar
+        overall_pbar = tqdm(
+            total=total_tests,
+            desc="OVERALL PROGRESS",
+            position=0,
+            unit="test",
+            bar_format='{l_bar}{bar}| {n_fmt}/{total_fmt} [{elapsed}<{remaining}]',
+            colour='blue',
+            leave=True
+        )
+
+        for agent_idx, (agent_name, agent) in enumerate(self.agents.items()):
             print(f"\n{'=' * 70}")
             print(f"Running experiments for: {agent_name.upper()}")
             print(f"{'=' * 70}\n")
 
             agent_results = []
 
-            for i, test_case in enumerate(self.test_cases, 1):
-                print(f"[{i}/{len(self.test_cases)}] {test_case.get('complexity', '?').upper()}: {test_case['question'][:60]}...")
+            # Create progress bar for this agent (nested under overall)
+            agent_pbar = tqdm(
+                self.test_cases,
+                desc=f"{agent_name.upper()}",
+                position=1,
+                unit="test",
+                bar_format='{l_bar}{bar}| {n_fmt}/{total_fmt} [{elapsed}<{remaining}]',
+                colour='green',
+                leave=False
+            )
+
+            for test_case in agent_pbar:
+                # Update progress bar description with current test info
+                complexity = test_case.get('complexity', '?').upper()
+                agent_pbar.set_description(f"{agent_name.upper()} [{complexity}]")
 
                 result = self.run_single_test(agent_name, agent, test_case)
                 agent_results.append(result)
 
-                # Print quick feedback
+                # Update progress bar postfix with last result
                 score = result['correctness_score']
-                if score >= 0.9:
-                    print(f"  ✅ Score: {score:.2f} | Latency: {result['latency_ms']:.0f}ms")
-                elif score >= 0.7:
-                    print(f"  ⚠️  Score: {score:.2f} | Latency: {result['latency_ms']:.0f}ms")
-                else:
-                    print(f"  ❌ Score: {score:.2f} | Latency: {result['latency_ms']:.0f}ms")
+                score_emoji = "✅" if score >= 0.9 else "⚠️" if score >= 0.7 else "❌"
+                agent_pbar.set_postfix({
+                    'score': f"{score:.2f}",
+                    'latency': f"{result['latency_ms']:.0f}ms",
+                    'status': score_emoji
+                })
+
+                # Update overall progress
+                overall_pbar.update(1)
+                overall_pbar.set_postfix({
+                    'agent': agent_name,
+                    'avg_score': f"{calculate_aggregate_metrics(all_results + agent_results)['avg_correctness']:.2f}" if (all_results or agent_results) else "N/A"
+                })
+
+            agent_pbar.close()
 
             # Calculate aggregate metrics for this agent
             agent_metrics = calculate_aggregate_metrics(agent_results)
@@ -195,6 +233,9 @@ class ExperimentRunner:
             print(f"  Avg Retrieval Precision: {agent_metrics['avg_retrieval_precision']:.3f}")
 
             all_results.extend(agent_results)
+
+        # Close overall progress bar
+        overall_pbar.close()
 
         # Build complete experiment report
         experiment_results = {
