@@ -11,6 +11,7 @@ from typing import Dict, Any, List
 from tqdm import tqdm
 
 from src.agents.base import BaseAgent
+from src.constants import DEFAULT_LLM_MODEL, DEFAULT_TOP_K_TABLES, DEFAULT_EMBEDDING_MODEL
 from experiments.utils.llm_judge import LLMJudge
 from experiments.utils.metrics import (
     calculate_retrieval_precision,
@@ -26,6 +27,7 @@ class ExperimentRunner:
         self,
         test_cases_path: str,
         agents: Dict[str, BaseAgent],
+        agent_configs: Dict[str, Dict[str, Any]] = None,
         judge_model: str = "claude-sonnet-4-5"
     ):
         """
@@ -35,10 +37,13 @@ class ExperimentRunner:
             test_cases_path: Path to generated test cases JSON
             agents: Dictionary mapping agent names to agent instances
                    e.g., {'keyword': KeywordAgent(...), 'semantic': SemanticAgent(...)}
+            agent_configs: Dictionary mapping agent names to their configurations
+                   e.g., {'keyword_v1': {'type': 'keyword', 'llm_model': 'claude-sonnet-4-5', ...}}
             judge_model: LLM model to use for correctness evaluation
         """
         self.test_cases = self._load_test_cases(test_cases_path)
         self.agents = agents
+        self.agent_configs = agent_configs or {}
         self.judge = LLMJudge(model=judge_model)
 
         print(f"✅ Loaded {len(self.test_cases)} test cases")
@@ -241,7 +246,9 @@ class ExperimentRunner:
         experiment_results = {
             'metadata': {
                 'timestamp': datetime.now().isoformat(),
-                'agents': list(self.agents.keys()),
+                'agents': self.agent_configs if self.agent_configs else {
+                    name: {'type': name} for name in self.agents.keys()
+                },
                 'total_test_cases': len(self.test_cases),
                 'judge_model': self.judge.model_name
             },
@@ -349,6 +356,7 @@ def main():
 
     # Dynamically import and instantiate requested agents
     agents = {}
+    agent_configs = {}
 
     if "keyword" in args.agents:
         from src.agents.keyword_agent import KeywordAgent
@@ -357,6 +365,12 @@ def main():
             schema_path=args.schema_path,
             top_k_tables=args.top_k
         )
+        agent_configs['keyword'] = {
+            'type': 'keyword',
+            'llm_model': DEFAULT_LLM_MODEL,
+            'top_k': args.top_k,
+            'schema_path': args.schema_path
+        }
 
     if "semantic" in args.agents:
         from src.agents.semantic_agent import SemanticAgent
@@ -365,6 +379,13 @@ def main():
             schema_path=args.schema_path,
             top_k_tables=args.top_k
         )
+        agent_configs['semantic'] = {
+            'type': 'semantic',
+            'llm_model': DEFAULT_LLM_MODEL,
+            'embedding_model': DEFAULT_EMBEDDING_MODEL,
+            'top_k': args.top_k,
+            'schema_path': args.schema_path
+        }
 
     print()
 
@@ -372,6 +393,7 @@ def main():
     runner = ExperimentRunner(
         test_cases_path=args.test_cases,
         agents=agents,
+        agent_configs=agent_configs,
         judge_model=args.judge_model
     )
 
