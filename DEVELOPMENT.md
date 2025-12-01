@@ -238,38 +238,185 @@ d4bae0f Implement SQL query validator
 
 ---
 
+### Phase 3: Experimental Framework ✅ COMPLETE
+**Started:** 2025-12-01
+**Completed:** 2025-12-01
+**Duration:** ~2 hours
+
+#### What We Built
+
+**1. Keyword Agent Implementation**
+- ✅ **Keyword Agent** (`src/agents/keyword_agent.py`)
+  - Implements keyword-based retrieval variant for comparison
+  - Nearly identical to SemanticAgent except uses `KeywordRetrieval` instead of `SemanticRetrieval`
+  - Same LLM (Claude), same validation, same pipeline
+  - Enables direct comparison of retrieval strategies
+
+- ✅ **Keyword Agent Tests** (`tests/test_keyword_agent.py`) - 15 tests
+  - Created by copying semantic agent tests and substituting class names
+  - All tests passing
+  - Validates initialization, retrieval, query generation, validation integration, error handling
+
+**2. Experimental Utilities**
+- ✅ **Metrics Module** (`experiments/utils/metrics.py`)
+  - `calculate_retrieval_precision()`: % of retrieved tables actually used
+  - `extract_tables_from_sql()`: Parse table names from SQL using regex
+  - `calculate_aggregate_metrics()`: Average correctness, latency, tokens, precision
+  - Supports breakdown by complexity and category
+
+- ✅ **LLM Judge** (`experiments/utils/llm_judge.py`)
+  - LLM-as-judge for semantic SQL correctness evaluation
+  - Uses Agno Agent with structured output (Pydantic `CorrectnessEvaluation`)
+  - Returns score (0.0-1.0), reasoning, and list of issues
+  - Scoring rubric: 1.0=perfect, 0.8-0.9=minor issues, 0.5-0.7=partial, 0.0-0.4=wrong
+  - Handles edge cases (empty SQL, LLM errors)
+
+**3. Test Case Generator**
+- ✅ **Test Case Generator** (`experiments/generate_test_cases.py`)
+  - Uses Agno Agent to generate synthetic test cases
+  - Structured output with Pydantic models (`TestCase`, `TestCaseBatch`)
+  - Three complexity levels: simple (single table), medium (aggregations), complex (JOINs)
+  - Validates generated SQL before accepting
+  - Saves to JSON for reuse (avoid regeneration costs)
+  - Configurable counts per complexity level
+
+**4. Experiment Runner**
+- ✅ **Generalized Experiment Runner** (`experiments/run_experiments.py`)
+  - **Accepts agents dynamically** via dependency injection (not hardcoded!)
+  - Supports any combination of agents through CLI
+  - Measures all metrics: correctness (LLM judge), latency, tokens, retrieval precision
+  - Runs all test cases through all agents
+  - Saves detailed results + aggregate metrics by agent/complexity/category
+  - Real-time progress feedback with emojis (✅/⚠️/❌)
+
+**5. Report Generator**
+- ✅ **Report Generator** (`experiments/generate_report.py`)
+  - Loads experiment results from JSON
+  - Generates comprehensive markdown report with:
+    - Executive summary with winner
+    - Methodology section
+    - Overall results table
+    - Breakdown by complexity and category
+    - Failure analysis with common issues and examples
+    - Key insights comparing agents
+    - Production recommendations and future improvements
+
+**6. Documentation**
+- ✅ **Experiments README** (`experiments/README.md`)
+  - Complete usage guide with quick start
+  - Architecture overview and design principles
+  - Instructions for adding new agents
+  - Cost estimates (~$0.70 per complete run)
+  - Output structure examples
+  - Troubleshooting guide
+
+#### Architecture Decisions
+
+**Decision 1: Generalized Agent Support**
+- **Choice:** Experiment runner accepts agents as parameters (dependency injection) vs. hardcoding
+- **Rationale:** Enables comparison of arbitrary agent architectures, not just keyword vs semantic
+- **Implementation:**
+  ```python
+  def __init__(self, test_cases_path: str, agents: Dict[str, BaseAgent]):
+      self.agents = agents  # Not hardcoded!
+  ```
+- **Benefit:** Easy to add new agent variants for future experiments
+
+**Decision 2: LLM-as-Judge for Correctness**
+- **Choice:** Use LLM to evaluate SQL correctness vs. executing queries against database
+- **Rationale:** No database to execute against; semantic evaluation handles equivalent queries
+- **Tradeoff:** Judge costs ~$0.08 per 25 test cases, but more flexible than exact string matching
+
+**Decision 3: Test Cases Generated Once, Reused**
+- **Choice:** Generate test cases with LLM, save to JSON, reuse across experiments
+- **Rationale:** Avoids regeneration costs (~$0.15 each time), ensures consistency
+- **Benefit:** Can cheaply iterate on agent improvements with same test suite
+
+**Decision 4: Comprehensive Metrics**
+- **Choice:** Measure correctness, latency, tokens, retrieval precision (not just accuracy)
+- **Rationale:** Production readiness requires understanding speed/cost tradeoffs
+- **Benefit:** Can optimize for different goals (accuracy vs. speed vs. cost)
+
+#### Git Commit History (Phase 3)
+```
+2eaaf44 Add comprehensive documentation for experimental framework
+613bece Add generalized experiment runner and report generator
+fb95b58 Add test case generator with LLM-based generation
+8f3e2c4 Add metrics and LLM judge utilities
+a72c0b5 Add comprehensive unit tests for keyword agent
+d3f1c8a Implement keyword agent for comparison experiments
+```
+
+#### Files Created (8 files)
+1. `src/agents/keyword_agent.py` (200 lines)
+2. `tests/test_keyword_agent.py` (404 lines)
+3. `experiments/utils/metrics.py` (~150 lines)
+4. `experiments/utils/llm_judge.py` (~150 lines)
+5. `experiments/generate_test_cases.py` (~300 lines)
+6. `experiments/run_experiments.py` (~330 lines)
+7. `experiments/generate_report.py` (~410 lines)
+8. `experiments/README.md` (~260 lines)
+
+**Total:** ~2,204 lines of code
+
+**Updated Test Count:** 153 tests passing (138 from Phase 2 + 15 keyword agent tests)
+
+#### Why This Framework Matters for Mate Security
+
+**1. Data-Driven Decision Making:**
+- Quantitative comparison of retrieval strategies (not just intuition)
+- Clear metrics show which approach is better and by how much
+- Can measure impact of architectural changes objectively
+
+**2. Production Confidence:**
+- LLM judge validates correctness before deployment
+- Failure analysis identifies weak spots to address
+- Latency/cost metrics inform deployment decisions
+
+**3. Extensibility:**
+- Easy to add new agent architectures for comparison
+- Test suite can grow with more edge cases
+- Framework supports A/B testing in production
+
+**4. Addressing Mate Security Pain Points:**
+- "Slow agents" → Latency metrics quantify speed
+- "Inaccurate agents" → Correctness scores measure accuracy
+- "No data to back claims" → Full experimental reports with statistics
+
+---
+
 ## Next Steps
 
-### Phase 3: Experimental Framework (Next)
-**Priority:** HIGH - Key differentiator for submission
-**Goal:** Compare retrieval strategies with data
+### Phase 4: Run Experiments & Documentation (Next)
+**Priority:** HIGH - Final deliverables
+**Goal:** Generate experimental results and complete documentation
 
-**Components:**
-1. Test case generator (synthetic questions + expected SQL)
-2. Evaluator (correctness, latency, cost, retrieval precision)
-3. Run experiments comparing keyword vs. semantic retrieval
-4. Generate comparison.md with findings
+**Immediate Tasks:**
+1. Run complete experimental pipeline
+   - Generate test cases (simple=10, medium=10, complex=5)
+   - Run experiments comparing keyword vs semantic agents
+   - Generate comparison.md report with findings
+2. Complete README.md with setup, architecture, examples
+3. Test example queries from assignment:
+   - "Show me all high-severity security events from the last 24 hours"
+   - "Which users had the most failed login attempts this month?"
+   - "Find all suspicious file access events related to sensitive documents"
+   - "What are the top 10 most common security event types?"
+   - "Show me events where the same IP address triggered multiple alerts"
+4. Record 5-minute video demo
+5. Final polish and submission
 
-**Key Metrics:**
-- Correctness: % semantically correct queries
-- Latency: End-to-end time per query
-- Cost: Total tokens per query
-- Retrieval Precision: % retrieved tables actually used
-
-### Phase 4: Documentation & Video
-**Includes:** README, example queries, video demo
-
-**Required Example Queries:**
-1. "Show me all high-severity security events from the last 24 hours"
-2. "Which users had the most failed login attempts this month?"
-3. "Find all suspicious file access events related to sensitive documents"
-4. "What are the top 10 most common security event types?"
-5. "Show me events where the same IP address triggered multiple alerts"
-
-**Documentation:**
-1. Complete README.md with setup, architecture, examples
-2. Record 5-minute video demo
-3. Final polish
+**Quality Assurance & Improvements:**
+- [ ] Consider caching mechanisms for better performance
+- [ ] QA homework one by one with help of Claude - check all optional requirements
+- [ ] Semantic agent and keyword agent are nearly identical - change them to be configurable?
+- [ ] Look at token usage in more detail: Maybe make token usage part of base agent?
+- [ ] Go over metrics.py, some of the metrics are too simple
+- [ ] Improve generate_report.py - final report is over the top and model usage is hardcoded
+- [ ] Check if really need dev requirements and if yes, if it is updated correctly
+- [ ] Check about using Tools as part of architecture
+- [ ] QA test database schema and start experimenting with real queries
+- [ ] Write an "additional features" report with ideas of what else can be done
 
 ---
 
@@ -318,9 +465,9 @@ pip install -r requirements-dev.txt
 |-------|-----------|--------|--------|
 | Phase 1: Setup & Foundation | 1.5 hrs | ~2 hrs | ✅ Complete |
 | Phase 2: Testing | 1.5 hrs | ~1 hr | ✅ Complete |
-| Phase 3: Experimental Framework | 2 hrs | - | 🔄 Next |
-| Phase 4: Documentation & Video | 1.5 hrs | - | ⏳ Pending |
-| **Total** | **6.5 hrs** | **~3 hrs** | **46% complete** |
+| Phase 3: Experimental Framework | 2 hrs | ~2 hrs | ✅ Complete |
+| Phase 4: Run Experiments & Documentation | 1.5 hrs | - | 🔄 Next |
+| **Total** | **6.5 hrs** | **~5 hrs** | **77% complete** |
 
 ---
 
@@ -338,6 +485,8 @@ pip install -r requirements-dev.txt
 ### Challenges
 1. **Test fixture design:** Initial test for truncation failed because sample schema was too small - had to create larger test data
 2. **Tokenizer behavior:** Underscores treated as word characters by `\w` regex, not as delimiters - tests needed adjustment
+3. **Generalization requirement:** Initial experiment runner hardcoded agents; refactored to use dependency injection after feedback
+4. **Balancing comprehensiveness:** Report generator creates very detailed output - may need simplification for readability
 
 ### For Video Demo
 **Key Messages to Emphasize:**
@@ -348,4 +497,4 @@ pip install -r requirements-dev.txt
 
 ---
 
-*Last Updated: 2025-11-30 - Phase 2 Complete (138 tests passing)*
+*Last Updated: 2025-12-01 - Phase 3 Complete (153 tests passing, experimental framework ready)*
