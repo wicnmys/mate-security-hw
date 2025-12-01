@@ -92,6 +92,8 @@ class ExperimentRunner:
                 'test_case_id': test_case.get('id', 'unknown'),
                 'question': question,
                 'generated_sql': None,
+                'agent_explanation': f"Error: {str(e)}",
+                'agent_reasoning_steps': [],
                 'correctness_score': 0.0,
                 'correctness_reasoning': f"Agent error: {str(e)}",
                 'correctness_issues': ['Agent execution failed'],
@@ -99,7 +101,8 @@ class ExperimentRunner:
                 'total_tokens': 0,
                 'retrieval_precision': 0.0,
                 'complexity': test_case.get('complexity', 'unknown'),
-                'category': test_case.get('category', 'unknown')
+                'category': test_case.get('category', 'unknown'),
+                'confidence': 0.0
             }
 
         generated_sql = response.get('query', '')
@@ -137,6 +140,8 @@ class ExperimentRunner:
             'question': question,
             'reference_sql': reference_sql,
             'generated_sql': generated_sql,
+            'agent_explanation': response.get('explanation', ''),
+            'agent_reasoning_steps': response.get('reasoning_steps', []),
             'correctness_score': correctness_eval['score'],
             'correctness_reasoning': correctness_eval['reasoning'],
             'correctness_issues': correctness_eval['issues'],
