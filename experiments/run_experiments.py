@@ -107,8 +107,10 @@ class ExperimentRunner:
                 'latency_ms': 0.0,
                 'total_tokens': 0,
                 'retrieval_precision': 0.0,
-                'complexity': test_case.get('complexity', 'unknown'),
+                'complexity': test_case.get('complexity'),
                 'category': test_case.get('category', 'unknown'),
+                'integrity_type': test_case.get('integrity_type'),
+                'expected_behavior': test_case.get('expected_behavior'),
                 'confidence': 0.0
             }
 
@@ -157,8 +159,10 @@ class ExperimentRunner:
             'retrieval_precision': retrieval_precision,
             'retrieved_tables': retrieved_tables,
             'reference_tables': reference_tables,
-            'complexity': test_case.get('complexity', 'unknown'),
+            'complexity': test_case.get('complexity'),
             'category': test_case.get('category', 'unknown'),
+            'integrity_type': test_case.get('integrity_type'),
+            'expected_behavior': test_case.get('expected_behavior'),
             'confidence': response.get('confidence', 0.0)
         }
 
@@ -205,8 +209,9 @@ class ExperimentRunner:
 
             for test_case in agent_pbar:
                 # Update progress bar description with current test info
-                complexity = test_case.get('complexity', '?').upper()
-                agent_pbar.set_description(f"{agent_name.upper()} [{complexity}]")
+                # Use integrity_type for integrity tests, complexity for regular tests
+                label = test_case.get('integrity_type') or test_case.get('complexity') or '?'
+                agent_pbar.set_description(f"{agent_name.upper()} [{label.upper()}]")
 
                 result = self.run_single_test(agent_name, agent, test_case)
                 agent_results.append(result)

@@ -73,11 +73,19 @@ class ReportGenerator:
         return f"{value:.{decimals}f}"
 
     def _compute_summary(self) -> Dict[str, Any]:
-        """Compute summary statistics from merged results."""
+        """Compute summary statistics from merged results.
+
+        Note: Excludes integrity test cases from correctness metrics.
+        Integrity tests have their own separate scoring in generate_integrity_breakdown().
+        """
         summary = {}
 
         for agent_name in self.agents:
-            agent_results = [r for r in self.results if r['agent'] == agent_name]
+            # Exclude integrity tests from correctness metrics
+            agent_results = [
+                r for r in self.results
+                if r['agent'] == agent_name and not r.get('integrity_type')
+            ]
 
             if not agent_results:
                 continue
@@ -94,8 +102,9 @@ class ReportGenerator:
                 if complexity_results:
                     agent_summary['by_complexity'][complexity] = calculate_aggregate_metrics(complexity_results)
 
-            # By category
+            # By category (excluding 'integrity' category)
             categories = set(r.get('category', 'unknown') for r in agent_results)
+            categories.discard('integrity')
             for category in categories:
                 category_results = [r for r in agent_results if r.get('category') == category]
                 if category_results:
@@ -597,11 +606,20 @@ def main():
     )
     parser.add_argument(
         "--output",
-        default="experiments/comparison.md",
-        help="Output path for markdown report"
+        default=None,
+        help="Output path for markdown report (auto-generated if not specified)"
     )
 
     args = parser.parse_args()
+
+    # Load results first to get agent names for auto-generated filename
+    generator = ReportGenerator(args.results)
+
+    # Auto-generate output path if not specified
+    if args.output is None:
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        agents_str = "_vs_".join(sorted(generator.agents))
+        args.output = f"experiments/reports/{agents_str}_{timestamp}.md"
 
     print("=" * 70)
     print("SQL AGENT REPORT GENERATOR")
@@ -615,7 +633,6 @@ def main():
     print(f"Output: {args.output}")
     print("=" * 70)
 
-    generator = ReportGenerator(args.results)
     generator.save_report(args.output)
 
     print("\n✅ Report generation complete!")
