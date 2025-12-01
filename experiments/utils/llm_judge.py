@@ -27,7 +27,12 @@ class LLMJudge:
         self.model_name = model
         self.agent = Agent(
             name="sql_correctness_judge",
-            model=Claude(id=model),
+            model=Claude(
+                id=model,
+                cache_system_prompt=True,  # Cache evaluation criteria
+                cache_tool_definitions=True,  # Cache output schema
+                cache_ttl="1h"  # Cache for 1 hour
+            ),
             instructions=self._get_judge_instructions(),
             output_schema=CorrectnessEvaluation,
             markdown=False

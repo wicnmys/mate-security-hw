@@ -53,10 +53,15 @@ class SemanticAgent(BaseAgent):
         # Initialize validator
         self.validator = SQLValidator(schemas=self.schemas)
 
-        # Initialize Agno agent
+        # Initialize Agno agent with prompt caching enabled
         self.agent = Agent(
             name="sql_query_generator",
-            model=Claude(id=model),
+            model=Claude(
+                id=model,
+                cache_system_prompt=True,  # Cache instructions (never change)
+                cache_tool_definitions=True,  # Cache output schema (never changes)
+                cache_ttl="1h"  # Cache for 1 hour
+            ),
             instructions=self._get_instructions(),
             output_schema=SQLQueryResponse,
             markdown=True
