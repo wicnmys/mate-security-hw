@@ -120,8 +120,7 @@ class ReActAgent(BaseAgent):
             ),
             instructions=self._get_instructions(),
             tools=self._tools,
-            markdown=False,
-            show_tool_calls=False
+            markdown=False
         )
 
     def _create_tools(self) -> List:

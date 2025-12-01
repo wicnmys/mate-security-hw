@@ -4,6 +4,7 @@ import pytest
 import os
 from src.agents.semantic_agent import SemanticAgent
 from src.agents.keyword_agent import KeywordAgent
+from src.agents.react_agent import ReActAgent
 
 
 @pytest.mark.integration
@@ -38,6 +39,20 @@ class TestAgentInitialization:
         assert agent.agent is not None
         assert agent.retriever is not None
         assert agent.validator is not None
+
+    def test_react_agent_initialization(self, integration_model):
+        """Test ReActAgent initializes with valid caching parameters."""
+        agent = ReActAgent(
+            schema_path="schemas/dataset.json",
+            model=integration_model,
+            top_k_tables=5,
+            retrieval_type="semantic"
+        )
+
+        assert agent.agent is not None
+        assert agent.retriever is not None
+        assert agent.validator is not None
+        assert len(agent._tools) == 3  # retrieve_tables, validate_sql, submit_answer
 
 
 @pytest.mark.integration
@@ -89,3 +104,25 @@ class TestAgentQueryGeneration:
         assert 'query' in result
         assert 'explanation' in result
         assert result['query'] is not None
+
+    def test_react_agent_generates_query(self, integration_model):
+        """Test ReActAgent can generate a query end-to-end using tools."""
+        # TODO: Revisit this limitation - as of 2025-12-01, Haiku doesn't support structured outputs (output_format)
+        # Check if newer versions of Haiku support this feature and remove skip if so
+        if 'haiku' in integration_model.lower():
+            pytest.skip(f"Skipping: {integration_model} doesn't support structured outputs")
+
+        agent = ReActAgent(
+            schema_path="schemas/dataset.json",
+            model=integration_model,
+            top_k_tables=5,
+            retrieval_type="semantic"
+        )
+
+        result = agent.run("Show me all critical endpoint events")
+
+        assert 'query' in result
+        assert 'explanation' in result
+        assert 'tables_used' in result
+        assert 'confidence' in result
+        assert 'reasoning_steps' in result

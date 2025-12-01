@@ -1,0 +1,27 @@
+{
+  "metadata": {
+    "generated_at": "2025-12-02",
+    "total_cases": 2,
+    "purpose": "Small test for ReAct agent validation"
+  },
+  "test_cases": [
+    {
+      "id": "small_001",
+      "complexity": "simple",
+      "category": "endpoint",
+      "question": "Show me all critical severity endpoint events from the last 24 hours",
+      "reference_sql": "SELECT * FROM endpoint_events WHERE severity = 'critical' AND timestamp >= NOW() - INTERVAL '24 hours'",
+      "reference_tables": ["endpoint_events"],
+      "semantic_intent": "Retrieve all critical endpoint security events within the past day"
+    },
+    {
+      "id": "small_002",
+      "complexity": "medium",
+      "category": "authentication",
+      "question": "Count the number of failed login attempts per user today",
+      "reference_sql": "SELECT user_id, COUNT(*) as failed_count FROM authentication_events WHERE status = 'failure' AND timestamp >= CURRENT_DATE GROUP BY user_id ORDER BY failed_count DESC",
+      "reference_tables": ["authentication_events"],
+      "semantic_intent": "Aggregate failed login attempts by user for security monitoring"
+    }
+  ]
+}
