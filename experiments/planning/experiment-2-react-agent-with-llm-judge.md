@@ -527,4 +527,200 @@ We expect Experiment 2 to:
 
 ---
 
+## Implementation Checklist
+
+**IMPORTANT:** Follow this checklist to ensure nothing is missed. This was created based on lessons learned from Experiment 1.
+
+### Phase 1: Implementation
+
+- [ ] **Create the agent file**: `src/agents/react_agent_v2.py`
+  - Import from base classes and existing utilities
+  - Use existing `SemanticRetrieval` or `KeywordRetrieval`
+  - Use existing `SQLValidator`
+  - Add the new `llm_judge_evaluate` tool
+  - Use Agno's `@tool` decorator for tool functions
+  - **Avoid `show_tool_calls` parameter** - it's not supported by Agno Agent
+
+- [ ] **Create unit tests**: `tests/test_react_agent_v2.py`
+  - Test initialization with mock dependencies
+  - Test each tool function independently
+  - Test state management and loop control
+  - Test error handling and edge cases
+  - Mock all external dependencies (SentenceTransformer, Claude API)
+
+### Phase 2: Integration Tests (DON'T FORGET!)
+
+- [ ] **Update `tests/integration/test_agent_initialization.py`**
+  - Add import for the new agent class
+  - Add `test_react_agent_v2_initialization` test
+  - Add `test_react_agent_v2_generates_query` test
+  - Handle model limitations (Haiku doesn't support structured outputs)
+
+- [ ] **Update `tests/integration/conftest.py`** if needed
+  - Ensure `integration_model` fixture is available
+
+### Phase 3: Experiment Framework
+
+- [ ] **Update `experiments/run_experiments.py`**
+  - Add new agent to `--agents` choices
+  - Add agent initialization code
+  - Add agent config tracking
+
+- [ ] **Update `experiments/generate_report.py`**
+  - Add new agent to methodology section
+  - Ensure report generator handles new agent type
+
+### Phase 4: Run All Tests
+
+```bash
+# Run ALL unit tests first
+PYTHONPATH=. pytest tests/ -v --ignore=tests/integration
+
+# Run integration tests
+PYTHONPATH=. pytest tests/integration -v
+```
+
+- [ ] All unit tests pass
+- [ ] All integration tests pass (or skip gracefully for model limitations)
+
+### Phase 5: Run Experiments (BOTH Regular AND Integrity!)
+
+**Run small test first (validate agent works):**
+```bash
+PYTHONPATH=. python experiments/run_experiments.py \
+  --test-cases experiments/test_cases/small_test.json \
+  --agents react_v2 \
+  --output experiments/results/react_v2_small_test.json
+```
+
+**Run full regular experiment:**
+```bash
+PYTHONPATH=. python experiments/run_experiments.py \
+  --test-cases experiments/test_cases/generated_test_cases.json \
+  --agents react_v2 \
+  --output experiments/results/react_v2_experiment_results.json
+```
+
+**DON'T FORGET: Run integrity tests:**
+```bash
+PYTHONPATH=. python experiments/run_experiments.py \
+  --test-cases experiments/test_cases/integrity_test_cases.json \
+  --agents react_v2 \
+  --output experiments/results/react_v2_integrity_results.json
+```
+
+- [ ] Small test completed successfully
+- [ ] Full experiment completed (21 test cases)
+- [ ] Integrity tests completed (60 test cases)
+
+### Phase 6: Generate Reports
+
+**Generate comparison report with all agents:**
+```bash
+PYTHONPATH=. python experiments/generate_report.py \
+  --results experiments/results/experiment_results.json \
+            experiments/results/react_experiment_results.json \
+            experiments/results/react_v2_experiment_results.json \
+  --output experiments/reports/react_v2_comparison_report.md
+```
+
+**Generate integrity report if needed:**
+```bash
+PYTHONPATH=. python experiments/generate_report.py \
+  --results experiments/results/integrity_results.json \
+            experiments/results/react_integrity_results.json \
+            experiments/results/react_v2_integrity_results.json \
+  --output experiments/reports/react_v2_integrity_report.md
+```
+
+- [ ] Comparison report generated
+- [ ] Integrity report generated (if applicable)
+
+### Phase 7: Documentation
+
+- [ ] **Update `DEVELOPMENT.md`** with new Phase documentation
+  - Include experiment results comparison table
+  - Document key findings
+  - Document architecture decisions
+
+- [ ] **Commit changes** with meaningful commit message
+
+---
+
+## Lessons Learned from Experiment 1
+
+### Mistakes to Avoid
+
+1. **Forgetting Integration Tests**
+   - When adding a new agent, ALWAYS update `tests/integration/test_agent_initialization.py`
+   - Add both initialization and query generation tests
+   - Handle model limitations (e.g., Haiku doesn't support structured outputs)
+
+2. **Forgetting Integrity Tests**
+   - Run experiments on BOTH regular test cases AND integrity test cases
+   - Integrity tests cover: prompt_injection, off_topic, dangerous_sql, unanswerable, malformed_input, pii_sensitive
+
+3. **Agno Agent Limitations**
+   - `show_tool_calls` parameter is NOT supported - don't use it
+   - Use `cache_system_prompt=True` and `cache_ttl=<seconds>` for caching
+   - `cache_tool_definitions` is NOT supported
+
+4. **Test Mocking**
+   - When mocking agent.run(), simulate the side effects (like setting state)
+   - Example:
+     ```python
+     def side_effect(*args, **kwargs):
+         agent._state.has_submitted_answer = True
+         agent._state.final_answer = {...}
+         return mock_run_output
+     mock_agent.run.side_effect = side_effect
+     ```
+
+### Best Practices Followed
+
+1. **State Management**
+   - Use a dataclass for tracking agent state
+   - Track: iteration count, retrieved tables, generated queries, validation results, reasoning trace
+
+2. **Loop Control**
+   - Configure `max_iterations`, `max_retrieval_calls`, `max_validation_attempts`
+   - Check limits before each tool call
+   - Return meaningful error messages when limits exceeded
+
+3. **Error Handling**
+   - Wrap tool executions in try/except
+   - Log exceptions with `logger.exception()`
+   - Return graceful error responses
+
+4. **Testing Strategy**
+   - Mock external dependencies for fast, reliable unit tests
+   - Use integration tests to validate against real APIs
+   - Separate unit tests from integration tests
+
+### Experiment Timeline Expectations
+
+Based on Experiment 1 results:
+- **Small test (2 queries)**: ~1-2 minutes
+- **Full experiment (21 queries)**: ~15 minutes per agent
+- **Integrity tests (60 queries)**: ~35-40 minutes per agent
+
+Plan accordingly and run experiments in background when possible.
+
+---
+
+## Answers to Open Questions (Based on Experiment 1)
+
+1. **Judge model**: Use Sonnet for accuracy. Haiku doesn't support structured outputs.
+
+2. **Judge prompt**: Include table schemas formatted concisely. The `format_schema_for_llm()` utility works well.
+
+3. **When to judge**: After structural validation passes. Don't waste judge calls on syntax errors.
+
+4. **Score threshold**: 0.7+ is "good enough" based on Experiment 1 results. 0.9+ is ideal.
+
+5. **Cost vs accuracy tradeoff**: To be determined by this experiment. Track token usage and latency carefully.
+
+---
+
 *Created: 2025-12-01*
+*Updated: 2025-12-02 - Added implementation checklist and lessons learned from Experiment 1*
