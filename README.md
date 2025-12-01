@@ -136,6 +136,8 @@ python main.py "Find suspicious file access events" --json
 
 ## Usage Examples
 
+*All examples below show actual outputs from the agent (run with `--json` flag).*
+
 ### Example 1: High Severity Events
 
 ```bash
@@ -143,12 +145,23 @@ python main.py "Show me all high-severity security events from the last 24 hours
 ```
 
 **Output:**
-```sql
-SELECT *
-FROM endpoint_events
-WHERE severity IN ('high', 'critical')
-  AND timestamp >= NOW() - INTERVAL '24 hours'
-ORDER BY timestamp DESC;
+```json
+{
+  "query": "SELECT alert_id, timestamp, alert_name, alert_type, severity, priority,
+            status, source_system, affected_assets, affected_users, description
+            FROM security_alerts
+            WHERE severity IN ('high', 'critical')
+              AND timestamp >= NOW() - INTERVAL '24 hours'
+            ORDER BY timestamp DESC",
+  "tables_used": ["security_alerts"],
+  "confidence": 0.95,
+  "reasoning_steps": [
+    "Identified 'high-severity' as requiring severity filter for 'high' and 'critical' levels",
+    "Mapped 'security events' to the security_alerts table",
+    "Parsed 'last 24 hours' as a time filter using NOW() - INTERVAL '24 hours'",
+    "Applied ORDER BY timestamp DESC to show most recent events first"
+  ]
+}
 ```
 
 ### Example 2: Failed Login Analysis
@@ -158,28 +171,208 @@ python main.py "Which users had the most failed login attempts this month?"
 ```
 
 **Output:**
-```sql
-SELECT user_id, username, COUNT(*) as failed_attempts
-FROM authentication_events
-WHERE event_type = 'login_failed'
-  AND timestamp >= DATE_TRUNC('month', CURRENT_DATE)
-GROUP BY user_id, username
-ORDER BY failed_attempts DESC
-LIMIT 10;
+```json
+{
+  "query": "SELECT user_name, COUNT(*) as failed_attempts
+            FROM authentication_events
+            WHERE status = 'failure'
+              AND timestamp >= DATE_TRUNC('month', CURRENT_TIMESTAMP)
+            GROUP BY user_name
+            ORDER BY failed_attempts DESC",
+  "tables_used": ["authentication_events"],
+  "confidence": 0.95,
+  "reasoning_steps": [
+    "Identified that failed login data is in the authentication_events table",
+    "Used status='failure' to filter for failed authentication attempts",
+    "Applied DATE_TRUNC('month', CURRENT_TIMESTAMP) to filter for current month"
+  ]
+}
 ```
 
 ### Example 3: File Access Investigation
 
 ```bash
-python main.py "Find all suspicious file access events related to sensitive documents" --explain
+python main.py "Find all suspicious file access events related to sensitive documents"
 ```
 
-**Output includes:**
-- Generated SQL query
-- Explanation of query logic
-- Retrieved tables and relevance scores
-- Confidence score
-- Validation results
+**Output:**
+```json
+{
+  "query": "SELECT fe.event_id, fe.timestamp, fe.hostname, fe.event_type,
+            fe.file_path, fe.file_name, fe.user_name, fe.process_name
+            FROM file_events fe
+            WHERE (LOWER(fe.file_path) LIKE '%confidential%'
+                   OR LOWER(fe.file_path) LIKE '%sensitive%' ...)
+              AND (fe.event_type IN ('copy', 'rename', 'delete')
+                   OR fe.access_mask LIKE '%WRITE%')
+            ORDER BY fe.timestamp DESC",
+  "tables_used": ["file_events"],
+  "confidence": 0.75,
+  "reasoning_steps": [
+    "Identified file_events as the primary table for file system activity",
+    "Determined 'sensitive documents' by file path keywords and extensions",
+    "Defined 'suspicious' activity as copy, rename, delete, or write operations",
+    "Confidence of 0.75 due to ambiguity in what constitutes 'sensitive' and 'suspicious'"
+  ]
+}
+```
+
+### Example 4: Event Type Analysis
+
+```bash
+python main.py "What are the top 10 most common security event types?"
+```
+
+**Output:**
+```json
+{
+  "query": "SELECT event_type, COUNT(*) as event_count
+            FROM endpoint_events
+            GROUP BY event_type
+            ORDER BY event_count DESC
+            LIMIT 10",
+  "tables_used": ["endpoint_events"],
+  "confidence": 0.95,
+  "reasoning_steps": [
+    "The endpoint_events table contains core security events with event_type field",
+    "Used GROUP BY and COUNT(*) for aggregation",
+    "Applied ORDER BY count DESC and LIMIT 10 for top results"
+  ]
+}
+```
+
+### Example 5: Multi-Alert IP Detection
+
+```bash
+python main.py "Show me events where the same IP address triggered multiple alerts"
+```
+
+**Output:**
+```json
+{
+  "query": "SELECT ip_address, COUNT(*) as alert_count,
+            MIN(timestamp) as first_alert, MAX(timestamp) as last_alert,
+            ARRAY_AGG(DISTINCT alert_name) as alert_names
+            FROM security_alerts
+            WHERE ip_address IS NOT NULL
+            GROUP BY ip_address
+            HAVING COUNT(*) > 1
+            ORDER BY alert_count DESC",
+  "tables_used": ["security_alerts"],
+  "confidence": 0.6,
+  "reasoning_steps": [
+    "Identified need to find duplicate IP addresses across security alerts",
+    "Used GROUP BY with HAVING COUNT(*) > 1 to filter for IPs with multiple alerts",
+    "Included temporal information (first/last alert) for context",
+    "Confidence reduced to 0.6 due to uncertainty about IP address field location"
+  ]
+}
+```
+
+## Edge Case Handling
+
+The agent handles various edge cases gracefully:
+
+### Empty Input
+
+```bash
+python main.py ""
+```
+
+**Output:**
+```json
+{
+  "query": null,
+  "explanation": "Error processing question: Question cannot be empty",
+  "tables_used": [],
+  "confidence": 0.0,
+  "error": "Question cannot be empty"
+}
+```
+
+### Ambiguous Questions
+
+```bash
+python main.py "Show me stuff"
+```
+
+**Output:**
+```json
+{
+  "query": "SELECT asset_id, hostname, asset_type, os_type, location, criticality
+            FROM asset_inventory ORDER BY last_updated DESC LIMIT 100",
+  "confidence": 0.3,
+  "reasoning_steps": [
+    "Question is extremely ambiguous with no specific context",
+    "Chose asset_inventory as foundational security data",
+    "Confidence is very low - user needs to provide more specific requirements"
+  ]
+}
+```
+
+### Dangerous Operations Detection
+
+```bash
+python main.py "DROP TABLE users; DELETE FROM security_events"
+```
+
+**Output:**
+```json
+{
+  "query": "SELECT 'SECURITY ALERT: SQL injection attempt detected' AS warning",
+  "explanation": "This input contains SQL injection attack patterns. Rather than
+                  executing destructive commands, returning a safety message.",
+  "confidence": 0.5,
+  "reasoning_steps": [
+    "Detected SQL injection keywords: DROP TABLE, DELETE FROM",
+    "Identified destructive intent rather than data query intent",
+    "Returning warning message instead of generating destructive SQL",
+    "Validation errors: Invalid SQL syntax"
+  ]
+}
+```
+
+### Nonexistent Tables/Fields
+
+```bash
+python main.py "Show me foobar_column from xyzzy_table"
+```
+
+**Output:**
+```json
+{
+  "query": "SELECT foobar_column, baz_field FROM xyzzy_table",
+  "confidence": 0.1,
+  "reasoning_steps": [
+    "No table named 'xyzzy_table' exists in the database",
+    "No columns named 'foobar_column' exist in any available tables",
+    "Validation warnings: Unknown fields: foobar_column, baz_field",
+    "Validation errors: Unknown tables: xyzzy_table"
+  ]
+}
+```
+
+### Unrelated Queries (No Matching Tables)
+
+```bash
+python main.py "Show me all quantum blockchain NFT transactions"
+```
+
+**Output:**
+```json
+{
+  "query": "SELECT * FROM network_traffic
+            WHERE application LIKE '%blockchain%' OR application LIKE '%NFT%'
+            LIMIT 100",
+  "confidence": 0.25,
+  "reasoning_steps": [
+    "Identified that 'quantum blockchain NFT' combines unrelated buzzwords",
+    "Database schema has no tables for blockchain/crypto monitoring",
+    "Made best-effort attempt using network_traffic table",
+    "Very low confidence - query unlikely to return meaningful results"
+  ]
+}
+```
 
 ## Testing
 

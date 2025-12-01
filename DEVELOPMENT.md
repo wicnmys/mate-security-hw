@@ -494,8 +494,8 @@ d3f1c8a Implement keyword agent for comparison experiments
 **Remaining TODOs (sorted by priority):**
 
 **Priority 1 - High Impact**
-- [ ] **Improve code quality** - Address issues from [code-review.md](context/code-review.md): agent duplication, pickle security, logging, late imports
-- [ ] **Add examples to README** - Include the 5 sample questions with actual outputs + edge case demonstrations (empty input, validation warnings, dangerous ops, etc.)
+- [x] ~~**Improve code quality**~~ ✅ **DONE** - All issues from [code-review.md](context/code-review.md) addressed in Phase 5
+- [x] ~~**Add examples to README**~~ ✅ **DONE** - Added 5 sample queries with actual outputs + 5 edge case demonstrations
 - [ ] **Add SQL parser** - Replace regex-based validation with `sqlparse` or `sqlglot` for proper AST parsing
 
 **Priority 2 - Architecture**
@@ -549,7 +549,6 @@ pip install -r requirements-dev.txt
 4. **Hardcoded Anthropic provider:** Agent imports and uses `Claude` class directly from `agno.models.anthropic`, making it inflexible for switching providers (e.g., OpenAI, local models). Should use dynamic provider selection based on model string.
 5. **No off-topic question handling:** Agent will attempt SQL generation for any question (no guardrails)
 6. **No query refinement:** Single-pass generation without iterative feedback (bonus feature not implemented)
-7. **No edge case demos in README:** Unit tests cover edge cases but user-facing examples not documented
 
 ### Questions/Decisions Pending
 - [ ] Should we add baseline agent (keyword retrieval) as CLI option for experimental comparison?
