@@ -158,6 +158,8 @@ class ReportGenerator:
                 lines.append("- **Keyword Agent**: Token-based keyword matching retrieval")
             elif agent == "semantic":
                 lines.append("- **Semantic Agent**: Embedding-based semantic similarity retrieval")
+            elif agent == "react":
+                lines.append("- **ReAct Agent**: Iterative reasoning + acting with retrieval and validation tools")
             else:
                 lines.append(f"- **{agent.title()} Agent**: Custom retrieval strategy")
 
