@@ -1,24 +1,25 @@
-"""SQL query validation utilities."""
+"""SQL query validation utilities using sqlglot for proper AST parsing."""
 
+import logging
 import re
 from typing import Dict, List, Any, Optional, Tuple
+
+import sqlglot
+from sqlglot import exp
+from sqlglot.errors import ParseError
+
+from src.constants import DANGEROUS_SQL_OPERATIONS
+
+logger = logging.getLogger(__name__)
 
 
 class SQLValidator:
     """
-    Validator for SQL queries.
+    Validator for SQL queries using sqlglot AST parsing.
 
     Performs syntax checking and schema validation without executing queries.
+    Uses PostgreSQL dialect for parsing.
     """
-
-    # SQL keywords that should be present in valid queries
-    REQUIRED_KEYWORDS = {'SELECT'}
-
-    # Dangerous SQL operations to flag
-    DANGEROUS_OPERATIONS = {
-        'DROP', 'DELETE', 'TRUNCATE', 'UPDATE', 'INSERT',
-        'ALTER', 'CREATE', 'GRANT', 'REVOKE'
-    }
 
     def __init__(self, schemas: Optional[Dict[str, Any]] = None):
         """
@@ -28,43 +29,65 @@ class SQLValidator:
             schemas: Optional dictionary of table schemas for validation
         """
         self.schemas = schemas or {}
+        self.dialect = "postgres"
 
     def is_valid(self, query: str) -> bool:
         """
-        Check if SQL query has valid syntax (basic check).
+        Check if SQL query has valid syntax using sqlglot parsing.
 
         Args:
             query: SQL query string
 
         Returns:
-            True if query appears syntactically valid
+            True if query is syntactically valid
         """
         if not query or not query.strip():
             return False
 
-        # Remove extra whitespace and convert to uppercase for checking
-        query_upper = ' '.join(query.split()).upper()
-
-        # Check for required keywords
-        if not any(keyword in query_upper for keyword in self.REQUIRED_KEYWORDS):
+        # Quick check: require SELECT keyword to be present
+        # (sqlglot is lenient and may parse "FROM x" as "SELECT * FROM x")
+        query_upper = query.upper().strip()
+        if not query_upper.startswith('SELECT') and 'SELECT' not in query_upper:
             return False
 
-        # Check for basic SQL structure patterns
-        # At minimum, should have SELECT ... FROM pattern
-        if 'SELECT' in query_upper:
-            # Simple pattern check: SELECT ... FROM ...
-            if 'FROM' not in query_upper:
+        try:
+            # Try to parse the query
+            parsed = sqlglot.parse(query, dialect=self.dialect)
+
+            # Must have at least one statement
+            if not parsed or len(parsed) == 0:
                 return False
 
-        # Check for unclosed quotes or parentheses
-        if not self._check_balanced_delimiters(query):
+            # Check if any statement is a SELECT with FROM clause
+            for stmt in parsed:
+                if stmt is None:
+                    return False
+                # Check for SELECT statement with FROM clause
+                if isinstance(stmt, exp.Select):
+                    # Require a FROM clause for data retrieval queries
+                    if stmt.find(exp.From):
+                        return True
+                    # SELECT without FROM is not valid for our use case
+                    return False
+                # Allow other statement types that have a FROM clause
+                if stmt.find(exp.From):
+                    return True
+
+            # If we get here with no errors, it's syntactically valid
+            # but may not be a data retrieval query
             return False
 
-        return True
+        except ParseError as e:
+            logger.debug("Parse error: %s", e)
+            return False
+        except Exception as e:
+            logger.debug("Unexpected error parsing SQL: %s", e)
+            return False
 
     def _check_balanced_delimiters(self, query: str) -> bool:
         """
         Check if quotes and parentheses are balanced.
+        Kept for backward compatibility with tests.
 
         Args:
             query: SQL query string
@@ -72,7 +95,6 @@ class SQLValidator:
         Returns:
             True if delimiters are balanced
         """
-        # Check parentheses
         paren_count = 0
         in_single_quote = False
         in_double_quote = False
@@ -81,30 +103,24 @@ class SQLValidator:
         while i < len(query):
             char = query[i]
 
-            # Handle escape sequences
             if char == '\\' and i + 1 < len(query):
                 i += 2
                 continue
 
-            # Toggle quote states
             if char == "'" and not in_double_quote:
                 in_single_quote = not in_single_quote
             elif char == '"' and not in_single_quote:
                 in_double_quote = not in_double_quote
-
-            # Count parentheses outside of quotes
             elif not in_single_quote and not in_double_quote:
                 if char == '(':
                     paren_count += 1
                 elif char == ')':
                     paren_count -= 1
-
                 if paren_count < 0:
                     return False
 
             i += 1
 
-        # All delimiters should be closed
         return paren_count == 0 and not in_single_quote and not in_double_quote
 
     def table_exists(self, query: str) -> bool:
@@ -118,18 +134,14 @@ class SQLValidator:
             True if all tables exist or no schemas loaded
         """
         if not self.schemas:
-            # Can't validate without schemas
             return True
 
-        # Extract table names from query
         table_names = self._extract_table_names(query)
-
-        # Check if all tables exist
         return all(table in self.schemas for table in table_names)
 
     def _extract_table_names(self, query: str) -> List[str]:
         """
-        Extract table names from SQL query.
+        Extract table names from SQL query using sqlglot AST.
 
         Args:
             query: SQL query string
@@ -139,7 +151,36 @@ class SQLValidator:
         """
         tables = []
 
-        # Pattern to match: FROM table_name or JOIN table_name
+        try:
+            parsed = sqlglot.parse(query, dialect=self.dialect)
+
+            for stmt in parsed:
+                if stmt is None:
+                    continue
+
+                # Find all Table expressions in the AST
+                for table in stmt.find_all(exp.Table):
+                    table_name = table.name.lower()
+                    if table_name and table_name not in tables:
+                        tables.append(table_name)
+
+        except (ParseError, Exception) as e:
+            logger.debug("Error extracting tables, falling back to regex: %s", e)
+            tables = self._extract_table_names_regex(query)
+
+        return tables
+
+    def _extract_table_names_regex(self, query: str) -> List[str]:
+        """
+        Fallback regex-based table extraction.
+
+        Args:
+            query: SQL query string
+
+        Returns:
+            List of table names found in query
+        """
+        tables = []
         patterns = [
             r'\bFROM\s+([a-zA-Z_][a-zA-Z0-9_]*)',
             r'\bJOIN\s+([a-zA-Z_][a-zA-Z0-9_]*)',
@@ -159,7 +200,7 @@ class SQLValidator:
 
     def check_dangerous_operations(self, query: str) -> Tuple[bool, List[str]]:
         """
-        Check if query contains dangerous operations.
+        Check if query contains dangerous operations using AST analysis.
 
         Args:
             query: SQL query string
@@ -167,14 +208,47 @@ class SQLValidator:
         Returns:
             Tuple of (has_dangerous_ops, list of dangerous operations found)
         """
+        dangerous_found = []
+
+        try:
+            parsed = sqlglot.parse(query, dialect=self.dialect)
+
+            for stmt in parsed:
+                if stmt is None:
+                    continue
+
+                # Check statement type against dangerous operations
+                stmt_type = type(stmt).__name__.upper()
+
+                for op in DANGEROUS_SQL_OPERATIONS:
+                    if op in stmt_type:
+                        if op not in dangerous_found:
+                            dangerous_found.append(op)
+
+        except (ParseError, Exception):
+            # Fall back to keyword detection on parse error
+            dangerous_found = self._check_dangerous_regex(query)
+
+        return len(dangerous_found) > 0, dangerous_found
+
+    def _check_dangerous_regex(self, query: str) -> List[str]:
+        """
+        Fallback regex-based dangerous operation detection.
+
+        Args:
+            query: SQL query string
+
+        Returns:
+            List of dangerous operations found
+        """
         query_upper = query.upper()
         dangerous_found = []
 
-        for operation in self.DANGEROUS_OPERATIONS:
+        for operation in DANGEROUS_SQL_OPERATIONS:
             if re.search(rf'\b{operation}\b', query_upper):
                 dangerous_found.append(operation)
 
-        return len(dangerous_found) > 0, dangerous_found
+        return dangerous_found
 
     def validate_fields(self, query: str, strict: bool = False) -> Tuple[bool, List[str]]:
         """
@@ -191,18 +265,14 @@ class SQLValidator:
             return True, ["Cannot validate fields without schemas"]
 
         warnings = []
-
-        # Extract table names
         table_names = self._extract_table_names(query)
 
         if not table_names:
             return True, ["No tables found in query"]
 
-        # Extract field names from SELECT clause
         select_fields = self._extract_select_fields(query)
 
-        if '*' in select_fields:
-            # SELECT * is always valid
+        if '*' in select_fields or not select_fields:
             return True, []
 
         # Build available fields from referenced tables
@@ -211,28 +281,26 @@ class SQLValidator:
             if table_name in self.schemas:
                 schema = self.schemas[table_name]
                 for field in schema.get('fields', []):
-                    available_fields.add(field['name'].lower())
-                    # Also add table.field format
-                    available_fields.add(f"{table_name}.{field['name'].lower()}")
+                    field_name = field['name'].lower()
+                    available_fields.add(field_name)
+                    available_fields.add(f"{table_name}.{field_name}")
 
         # Check each field
         unknown_fields = []
         for field in select_fields:
             field_lower = field.lower().strip()
 
-            # Skip aggregate functions and expressions
-            if any(func in field_lower for func in ['count(', 'sum(', 'avg(', 'max(', 'min(', 'distinct']):
+            # Skip if it looks like an aggregate or expression
+            if self._is_aggregate_or_expression(field_lower):
                 continue
 
-            # Extract field name from potential alias (field AS alias)
-            field_parts = re.split(r'\s+as\s+', field_lower, flags=re.IGNORECASE)
-            actual_field = field_parts[0].strip()
+            # Extract base field name (handle aliases and table qualifiers)
+            base_field = self._extract_base_field_name(field_lower)
 
-            # Check if field exists
-            if actual_field not in available_fields and '.' not in actual_field:
-                # Also check without table prefix
-                base_field = actual_field.split('.')[-1] if '.' in actual_field else actual_field
-                if base_field not in available_fields:
+            if base_field and base_field not in available_fields:
+                # Check without table prefix
+                field_only = base_field.split('.')[-1] if '.' in base_field else base_field
+                if field_only not in available_fields:
                     unknown_fields.append(field)
 
         if unknown_fields:
@@ -242,9 +310,68 @@ class SQLValidator:
 
         return True, warnings
 
+    def _is_aggregate_or_expression(self, field: str) -> bool:
+        """Check if field is an aggregate function or expression."""
+        aggregate_patterns = [
+            'count(', 'sum(', 'avg(', 'max(', 'min(',
+            'distinct', 'case ', 'when ', 'coalesce(',
+            'array_agg(', 'string_agg(', 'json_agg(',
+            'now()', 'current_', 'date_trunc(',
+        ]
+        return any(pattern in field for pattern in aggregate_patterns)
+
+    def _extract_base_field_name(self, field: str) -> str:
+        """Extract the base field name from a field expression."""
+        # Remove alias (field AS alias)
+        field_parts = re.split(r'\s+as\s+', field, flags=re.IGNORECASE)
+        base = field_parts[0].strip()
+
+        # If it contains functions or expressions, skip
+        if '(' in base or ')' in base:
+            return ''
+
+        return base
+
     def _extract_select_fields(self, query: str) -> List[str]:
         """
-        Extract field names from SELECT clause.
+        Extract field names from SELECT clause using sqlglot AST.
+
+        Args:
+            query: SQL query string
+
+        Returns:
+            List of field names/expressions
+        """
+        fields = []
+
+        try:
+            parsed = sqlglot.parse(query, dialect=self.dialect)
+
+            for stmt in parsed:
+                if stmt is None:
+                    continue
+
+                # Find SELECT expressions
+                if isinstance(stmt, exp.Select):
+                    for expression in stmt.expressions:
+                        # Check for star
+                        if isinstance(expression, exp.Star):
+                            return ['*']
+
+                        # Get the SQL representation of the expression
+                        field_sql = expression.sql(dialect=self.dialect)
+                        if field_sql:
+                            fields.append(field_sql)
+
+        except (ParseError, Exception) as e:
+            logger.debug("Error extracting fields, falling back to regex: %s", e)
+            fields = self._extract_select_fields_regex(query)
+
+        return fields
+
+    def _extract_select_fields_regex(self, query: str) -> List[str]:
+        """
+        Fallback regex-based field extraction.
 
         Args:
             query: SQL query string
@@ -252,7 +379,6 @@ class SQLValidator:
         Returns:
             List of field names
         """
-        # Find SELECT clause
         select_match = re.search(
             r'\bSELECT\s+(.*?)\s+FROM\b',
             query,
@@ -264,13 +390,10 @@ class SQLValidator:
 
         select_clause = select_match.group(1)
 
-        # Handle SELECT *
         if '*' in select_clause:
             return ['*']
 
-        # Split by commas (basic parsing)
         fields = [f.strip() for f in select_clause.split(',')]
-
         return fields
 
     def validate(self, query: str, strict: bool = False) -> Dict[str, Any]:
@@ -291,7 +414,7 @@ class SQLValidator:
             'query': query
         }
 
-        # Check basic syntax
+        # Check basic syntax using sqlglot
         if not self.is_valid(query):
             results['valid'] = False
             results['errors'].append("Invalid SQL syntax")
@@ -321,3 +444,24 @@ class SQLValidator:
                 results['warnings'].extend(field_warnings)
 
         return results
+
+    def get_parse_errors(self, query: str) -> List[str]:
+        """
+        Get detailed parse errors from sqlglot.
+
+        Args:
+            query: SQL query string
+
+        Returns:
+            List of error messages
+        """
+        errors = []
+
+        try:
+            sqlglot.parse(query, dialect=self.dialect)
+        except ParseError as e:
+            errors.append(str(e))
+        except Exception as e:
+            errors.append(f"Unexpected error: {e}")
+
+        return errors

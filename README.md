@@ -580,9 +580,8 @@ See [DEVELOPMENT.md](DEVELOPMENT.md) for:
 ## Known Limitations
 
 1. **No database execution**: Agent generates SQL but doesn't execute it
-2. **Validation is heuristic**: Regex-based, not a full SQL parser
-3. **Haiku limitations**: Doesn't support structured outputs (skips some integration tests)
-4. **Single retrieval pass**: No iterative refinement based on LLM feedback
+2. **Haiku limitations**: Doesn't support structured outputs (skips some integration tests)
+3. **Single retrieval pass**: No iterative refinement based on LLM feedback
 
 ## Future Improvements
 

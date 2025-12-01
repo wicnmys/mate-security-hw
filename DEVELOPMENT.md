@@ -496,7 +496,10 @@ d3f1c8a Implement keyword agent for comparison experiments
 **Priority 1 - High Impact**
 - [x] ~~**Improve code quality**~~ ✅ **DONE** - All issues from [code-review.md](context/code-review.md) addressed in Phase 5
 - [x] ~~**Add examples to README**~~ ✅ **DONE** - Added 5 sample queries with actual outputs + 5 edge case demonstrations
-- [ ] **Add SQL parser** - Replace regex-based validation with `sqlparse` or `sqlglot` for proper AST parsing
+- [x] ~~**Add SQL parser**~~ ✅ **DONE** - Replaced regex-based validation with `sqlglot` for proper AST parsing
+  - Uses PostgreSQL dialect for accurate parsing
+  - Falls back to regex for malformed SQL (graceful degradation)
+  - All 153 unit tests passing
 
 **Priority 2 - Architecture**
 - [ ] **Pick one architectural improvement, build agent, run experiment** - Options: off-topic handling, multi-agent routing, or query refinement
@@ -544,11 +547,10 @@ pip install -r requirements-dev.txt
 
 ### Known Limitations
 1. **No actual database:** Agent generates SQL but doesn't execute
-2. **Validation is heuristic:** Regex-based, not a full SQL parser (consider `sqlparse` or `sqlglot`)
-3. **Single retrieval strategy:** Only semantic (keyword available but not wired to CLI yet)
-4. **Hardcoded Anthropic provider:** Agent imports and uses `Claude` class directly from `agno.models.anthropic`, making it inflexible for switching providers (e.g., OpenAI, local models). Should use dynamic provider selection based on model string.
-5. **No off-topic question handling:** Agent will attempt SQL generation for any question (no guardrails)
-6. **No query refinement:** Single-pass generation without iterative feedback (bonus feature not implemented)
+2. **Single retrieval strategy:** Only semantic (keyword available but not wired to CLI yet)
+3. **Hardcoded Anthropic provider:** Agent imports and uses `Claude` class directly from `agno.models.anthropic`, making it inflexible for switching providers (e.g., OpenAI, local models). Should use dynamic provider selection based on model string.
+4. **No off-topic question handling:** Agent will attempt SQL generation for any question (no guardrails)
+5. **No query refinement:** Single-pass generation without iterative feedback (bonus feature not implemented)
 
 ### Questions/Decisions Pending
 - [ ] Should we add baseline agent (keyword retrieval) as CLI option for experimental comparison?
