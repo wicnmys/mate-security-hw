@@ -567,4 +567,58 @@ pip install -r requirements-dev.txt
 
 ---
 
-*Last Updated: 2025-12-01 - Phase 3 Complete (168 tests: 159 unit + 9 integration, experimental framework ready, test case generation in progress)*
+**4. Experimental Results**
+- ✅ **Test Cases Generated**: 21 test cases (10 simple, 9 medium, 2 complex)
+  - LLM-generated using Claude Sonnet 4.5
+  - Validated against schema before acceptance
+  - Saved to `experiments/test_cases/generated_test_cases.json`
+
+- ✅ **Experiments Complete**: Compared keyword vs semantic agents
+  - 21 test cases × 2 agents = 42 total agent runs
+  - LLM-as-judge evaluation for correctness
+  - Measured: correctness, latency, tokens, retrieval precision
+
+- ✅ **Results Summary**:
+  | Metric | Keyword | Semantic | Winner |
+  |--------|---------|----------|--------|
+  | Correctness | 58.8% | **62.9%** | Semantic ✅ |
+  | Latency | 10.3s | 10.7s | Similar |
+  | Retrieval Precision | 79.4% | **87.6%** | Semantic ✅ |
+  | Tokens | 200 | 203 | Similar |
+
+- ✅ **Key Findings**:
+  - Semantic retrieval provides 4.1% better correctness
+  - Semantic retrieval achieves 8.2% better precision
+  - Performance gap widest on simple queries (76.5% vs 69.5%)
+  - Both agents struggle with complex multi-table queries
+  - Latency comparable (~10-11 seconds per query)
+
+- ✅ **Documentation Created**:
+  - `experiments/comparison.md` - Detailed experimental report
+  - `README.md` - Comprehensive project documentation
+  - Nested progress bars added to experiment runner (tqdm)
+
+**5. Documentation & UX Improvements**
+- ✅ **README.md Created**: Comprehensive documentation including:
+  - Quick start guide with installation steps
+  - Architecture overview with ASCII diagram
+  - Usage examples for security queries
+  - Testing instructions (unit + integration)
+  - Experimental framework documentation
+  - Project structure and configuration
+  - Performance metrics and cost estimates
+  - Known limitations and future improvements
+
+- ✅ **Nested Progress Bars**: Enhanced UX for experiments
+  - Overall progress bar (blue): Total tests across all agents
+  - Agent-specific progress bar (green): Current agent with live metrics
+  - Real-time display: score, latency, complexity, status emoji
+  - Elapsed/remaining time estimates
+
+**Updated Test Count:** 168 tests total (159 unit + 9 integration) ✅
+**Experimental Comparison:** Complete ✅
+**Documentation:** Complete ✅
+
+---
+
+*Last Updated: 2025-12-01 - Phase 3 & 4 Complete (Experiments run, semantic agent wins, full documentation ready)*

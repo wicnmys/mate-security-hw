@@ -12,7 +12,7 @@ This project implements a production-ready SQL agent that:
 - Validates generated SQL for correctness and safety
 - Provides explanations and confidence scores
 - Includes comprehensive testing (168 tests: 159 unit + 9 integration)
-- Features experimental comparison of retrieval strategies
+- Features experimental comparison of agent architectures
 
 **Key Features:**
 - **Semantic Retrieval**: Uses sentence-transformers for embedding-based table selection
@@ -222,7 +222,7 @@ pytest tests/test_semantic_agent.py tests/test_keyword_agent.py -v
 
 ## Experiments
 
-The project includes an experimental framework for comparing retrieval strategies.
+The project includes an experimental framework for comparing different agent architectures and approaches.
 
 ### Generate Test Cases
 
