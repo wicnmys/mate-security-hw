@@ -7,6 +7,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import List, Dict, Any
 
+from tqdm import tqdm
 from agno.agent import Agent
 from agno.models.anthropic import Claude
 from pydantic import BaseModel, Field
@@ -340,14 +341,18 @@ Return them in the structured format."""
         """
         all_cases = []
 
-        print(f"\n🔄 Generating {simple} simple test cases...")
-        all_cases.extend(self.generate_batch("simple", simple))
+        # Generate correctness test cases with progress bar
+        complexity_levels = [
+            ('simple', simple),
+            ('medium', medium),
+            ('complex', complex)
+        ]
 
-        print(f"\n🔄 Generating {medium} medium test cases...")
-        all_cases.extend(self.generate_batch("medium", medium))
-
-        print(f"\n🔄 Generating {complex} complex test cases...")
-        all_cases.extend(self.generate_batch("complex", complex))
+        print("\n📝 Generating correctness test cases...")
+        for complexity_name, count in tqdm(complexity_levels, desc="Complexity levels", unit="level"):
+            if count > 0:
+                cases = self.generate_batch(complexity_name, count)
+                all_cases.extend(cases)
 
         # Generate integrity test cases if requested
         integrity_categories = [
@@ -361,8 +366,8 @@ Return them in the structured format."""
 
         integrity_distribution = {}
         if integrity > 0:
-            for category in integrity_categories:
-                print(f"\n🔄 Generating {integrity} {category} integrity test cases...")
+            print("\n🛡️ Generating integrity test cases...")
+            for category in tqdm(integrity_categories, desc="Integrity categories", unit="category"):
                 cases = self.generate_integrity_cases(category, integrity)
                 all_cases.extend(cases)
                 integrity_distribution[category] = len(cases)
