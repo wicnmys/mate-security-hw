@@ -472,15 +472,46 @@ d3f1c8a Implement keyword agent for comparison experiments
   - Caches system instructions and tool definitions (90% cost reduction on cached tokens)
   - Estimated savings: $0.30-0.50 per experiment run
   - 1-hour TTL suitable for experiment sessions
-- [ ] QA homework one by one with help of Claude - check all optional requirements
-- [ ] Semantic agent and keyword agent are nearly identical - change them to be configurable?
-- [ ] Look at token usage in more detail: Maybe make token usage part of base agent?
-- [ ] Go over metrics.py, some of the metrics are too simple
-- [ ] Improve generate_report.py - final report is over the top and model usage is hardcoded
-- [ ] Check if really need dev requirements and if yes, if it is updated correctly
+- [x] ~~Code review for structure and readability~~ ✅ **DONE**: Full code review completed
+  - See detailed report: [`context/code-review.md`](context/code-review.md)
+  - **Overall Grades:** Structure B+, Readability A-, Best Practices B+, Issues B
+  - **Critical:** Agent code duplication (semantic/keyword agents 95% identical)
+  - **Important:** Pickle security risk, print statements instead of logging, late imports
+  - **Nice-to-have:** Magic numbers, long functions, unused imports
+- [x] ~~QA homework one by one with help of Claude - check all optional requirements~~ ✅ **DONE**: Full QA completed
+  - See detailed checklist: [`context/qa-checklist.md`](context/qa-checklist.md)
+  - **Core Functionality:** 4/4 requirements met (Schema Understanding, NLP, SQL Generation, Agent Implementation)
+  - **Expected Deliverables:** Documentation ✅, Test Cases ⚠️ (edge case demos missing from README)
+  - **Bonus Points:** 5/6 implemented (Query Refinement not implemented)
+  - **Key Gaps Identified:**
+    - No user-facing edge case demonstrations in README (unit tests exist but not shown)
+    - No off-topic question handling
+    - SQL validation is regex-based, not AST parsing
+    - Demo video not yet recorded
+  - **Potential Improvements Documented:** 15+ suggestions for future enhancements
+- [x] ~~Semantic agent and keyword agent are nearly identical - change them to be configurable?~~ **IDENTIFIED** in code review - extract common logic with dependency injection
+
+**Remaining TODOs (sorted by priority):**
+
+**Priority 1 - High Impact**
+- [ ] **Improve code quality** - Address issues from [code-review.md](context/code-review.md): agent duplication, pickle security, logging, late imports
+- [ ] **Add examples to README** - Include the 5 sample questions with actual outputs + edge case demonstrations (empty input, validation warnings, dangerous ops, etc.)
+- [ ] **Add SQL parser** - Replace regex-based validation with `sqlparse` or `sqlglot` for proper AST parsing
+
+**Priority 2 - Architecture**
+- [ ] **Pick one architectural improvement, build agent, run experiment** - Options: off-topic handling, multi-agent routing, or query refinement
 - [ ] Check about using Tools as part of architecture
+
+**Priority 3 - Polish**
+- [ ] **Improve experiment outputs** - Simplify generate_report.py, remove hardcoded model usage
+- [ ] Go over metrics.py - some metrics are too simple
+- [ ] Look at token usage in more detail - maybe make token usage part of base agent?
+- [ ] Check if really need dev requirements and if yes, if it is updated correctly
+
+**Priority 4 - Nice to Have**
 - [ ] QA test database schema and start experimenting with real queries
 - [ ] Write an "additional features" report with ideas of what else can be done
+- [ ] Record 5-minute video demo
 
 ---
 
@@ -513,9 +544,12 @@ pip install -r requirements-dev.txt
 
 ### Known Limitations
 1. **No actual database:** Agent generates SQL but doesn't execute
-2. **Validation is heuristic:** Regex-based, not a full SQL parser
+2. **Validation is heuristic:** Regex-based, not a full SQL parser (consider `sqlparse` or `sqlglot`)
 3. **Single retrieval strategy:** Only semantic (keyword available but not wired to CLI yet)
 4. **Hardcoded Anthropic provider:** Agent imports and uses `Claude` class directly from `agno.models.anthropic`, making it inflexible for switching providers (e.g., OpenAI, local models). Should use dynamic provider selection based on model string.
+5. **No off-topic question handling:** Agent will attempt SQL generation for any question (no guardrails)
+6. **No query refinement:** Single-pass generation without iterative feedback (bonus feature not implemented)
+7. **No edge case demos in README:** Unit tests cover edge cases but user-facing examples not documented
 
 ### Questions/Decisions Pending
 - [ ] Should we add baseline agent (keyword retrieval) as CLI option for experimental comparison?
@@ -621,4 +655,4 @@ pip install -r requirements-dev.txt
 
 ---
 
-*Last Updated: 2025-12-01 - Phase 3 & 4 Complete (Experiments run, semantic agent wins, full documentation ready)*
+*Last Updated: 2025-12-01 - Phase 3 & 4 Complete (Experiments run, semantic agent wins, full documentation ready, QA checklist complete)*
