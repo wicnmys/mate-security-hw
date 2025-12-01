@@ -407,7 +407,10 @@ d3f1c8a Implement keyword agent for comparison experiments
 5. Final polish and submission
 
 **Quality Assurance & Improvements:**
-- [ ] Consider caching mechanisms for better performance
+- [x] ~~Consider caching mechanisms for better performance~~ ✅ **DONE**: Enabled Anthropic prompt caching across all agents
+  - Caches system instructions and tool definitions (90% cost reduction on cached tokens)
+  - Estimated savings: $0.30-0.50 per experiment run
+  - 1-hour TTL suitable for experiment sessions
 - [ ] QA homework one by one with help of Claude - check all optional requirements
 - [ ] Semantic agent and keyword agent are nearly identical - change them to be configurable?
 - [ ] Look at token usage in more detail: Maybe make token usage part of base agent?
@@ -481,6 +484,7 @@ pip install -r requirements-dev.txt
 5. **Comprehensive testing:** 138 tests completed in ~1 hour, faster than estimated
 6. **Mocking strategy:** All external dependencies mocked = fast, reliable, no API keys needed
 7. **Test-driven bug finding:** Writing tests revealed edge cases we hadn't considered (e.g., arbitrary field caps in schema loader)
+8. **Prompt caching:** Agno's built-in Anthropic prompt caching (via `cache_system_prompt=True`) is much simpler than custom caching - reduces costs by ~90% on cached tokens with minimal code changes
 
 ### Challenges
 1. **Test fixture design:** Initial test for truncation failed because sample schema was too small - had to create larger test data
