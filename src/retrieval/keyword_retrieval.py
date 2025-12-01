@@ -3,6 +3,8 @@
 import re
 from typing import Dict, List, Any, Tuple
 
+from src.constants import MIN_KEYWORD_LENGTH
+
 
 class KeywordRetrieval:
     """
@@ -68,8 +70,8 @@ class KeywordRetrieval:
         # Split on non-alphanumeric characters
         tokens = re.findall(r'\b\w+\b', text)
 
-        # Filter out very short tokens
-        tokens = [t for t in tokens if len(t) > 2]
+        # Filter out very short tokens (shorter than MIN_KEYWORD_LENGTH)
+        tokens = [t for t in tokens if len(t) >= MIN_KEYWORD_LENGTH]
 
         return tokens
 

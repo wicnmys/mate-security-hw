@@ -85,7 +85,7 @@ class TestKeywordAgentInitialization:
     """Tests for keyword agent initialization."""
 
     @patch('src.agents.keyword_agent.KeywordRetrieval')
-    @patch('src.agents.keyword_agent.Agent')
+    @patch('src.agents.sql_agent.Agent')
     def test_initialization(self, mock_agent_class, mock_retrieval_class, sample_schema_file):
         """Test that agent initializes correctly."""
         agent = KeywordAgent(
@@ -113,7 +113,7 @@ class TestKeywordAgentInitialization:
         mock_agent_class.assert_called_once()
 
     @patch('src.agents.keyword_agent.KeywordRetrieval')
-    @patch('src.agents.keyword_agent.Agent')
+    @patch('src.agents.sql_agent.Agent')
     def test_initialization_with_defaults(self, mock_agent_class, mock_retrieval_class, sample_schema_file):
         """Test initialization with default parameters."""
         agent = KeywordAgent(schema_path=sample_schema_file)
@@ -126,7 +126,7 @@ class TestGetInstructions:
     """Tests for _get_instructions method."""
 
     @patch('src.agents.keyword_agent.KeywordRetrieval')
-    @patch('src.agents.keyword_agent.Agent')
+    @patch('src.agents.sql_agent.Agent')
     def test_get_instructions_returns_string(self, mock_agent_class, mock_retrieval_class, sample_schema_file):
         """Test that instructions are returned as string."""
         agent = KeywordAgent(schema_path=sample_schema_file)
@@ -136,7 +136,7 @@ class TestGetInstructions:
         assert len(instructions) > 0
 
     @patch('src.agents.keyword_agent.KeywordRetrieval')
-    @patch('src.agents.keyword_agent.Agent')
+    @patch('src.agents.sql_agent.Agent')
     def test_instructions_content(self, mock_agent_class, mock_retrieval_class, sample_schema_file):
         """Test that instructions contain key guidance."""
         agent = KeywordAgent(schema_path=sample_schema_file)
@@ -152,7 +152,7 @@ class TestBuildSchemaContext:
     """Tests for _build_schema_context method."""
 
     @patch('src.agents.keyword_agent.KeywordRetrieval')
-    @patch('src.agents.keyword_agent.Agent')
+    @patch('src.agents.sql_agent.Agent')
     def test_build_schema_context(self, mock_agent_class, mock_retrieval_class, sample_schema_file, mock_retrieval_results):
         """Test schema context building."""
         agent = KeywordAgent(schema_path=sample_schema_file)
@@ -166,7 +166,7 @@ class TestBuildSchemaContext:
         assert 'Relevance' in context
 
     @patch('src.agents.keyword_agent.KeywordRetrieval')
-    @patch('src.agents.keyword_agent.Agent')
+    @patch('src.agents.sql_agent.Agent')
     def test_build_schema_context_formatting(self, mock_agent_class, mock_retrieval_class, sample_schema_file, mock_retrieval_results):
         """Test that schema context is properly formatted."""
         agent = KeywordAgent(schema_path=sample_schema_file)
@@ -177,7 +177,7 @@ class TestBuildSchemaContext:
         assert '2.' in context
 
     @patch('src.agents.keyword_agent.KeywordRetrieval')
-    @patch('src.agents.keyword_agent.Agent')
+    @patch('src.agents.sql_agent.Agent')
     def test_build_schema_context_empty(self, mock_agent_class, mock_retrieval_class, sample_schema_file):
         """Test schema context with empty retrieval results."""
         agent = KeywordAgent(schema_path=sample_schema_file)
@@ -190,7 +190,7 @@ class TestExplainRetrieval:
     """Tests for explain_retrieval method."""
 
     @patch('src.agents.keyword_agent.KeywordRetrieval')
-    @patch('src.agents.keyword_agent.Agent')
+    @patch('src.agents.sql_agent.Agent')
     def test_explain_retrieval(self, mock_agent_class, mock_retrieval_class, sample_schema_file, mock_retrieval_results):
         """Test retrieval explanation."""
         mock_retriever = Mock()
@@ -221,7 +221,7 @@ class TestRun:
     """Tests for run method."""
 
     @patch('src.agents.keyword_agent.KeywordRetrieval')
-    @patch('src.agents.keyword_agent.Agent')
+    @patch('src.agents.sql_agent.Agent')
     def test_run_success(self, mock_agent_class, mock_retrieval_class, sample_schema_file, mock_retrieval_results, mock_sql_response):
         """Test successful query generation."""
         # Setup mocks
@@ -254,7 +254,7 @@ class TestRun:
         assert result['query'] == mock_sql_response.query
 
     @patch('src.agents.keyword_agent.KeywordRetrieval')
-    @patch('src.agents.keyword_agent.Agent')
+    @patch('src.agents.sql_agent.Agent')
     def test_run_with_validation_warnings(self, mock_agent_class, mock_retrieval_class, sample_schema_file, mock_retrieval_results):
         """Test run with validation warnings."""
         # Setup mocks
@@ -288,7 +288,7 @@ class TestRun:
         assert len(result['reasoning_steps']) > 0
 
     @patch('src.agents.keyword_agent.KeywordRetrieval')
-    @patch('src.agents.keyword_agent.Agent')
+    @patch('src.agents.sql_agent.Agent')
     def test_run_with_validation_errors(self, mock_agent_class, mock_retrieval_class, sample_schema_file, mock_retrieval_results):
         """Test run with validation errors."""
         # Setup mocks
@@ -323,7 +323,7 @@ class TestRun:
         assert any('Validation errors' in str(step) for step in result['reasoning_steps'])
 
     @patch('src.agents.keyword_agent.KeywordRetrieval')
-    @patch('src.agents.keyword_agent.Agent')
+    @patch('src.agents.sql_agent.Agent')
     def test_run_handles_exception(self, mock_agent_class, mock_retrieval_class, sample_schema_file):
         """Test that run handles exceptions gracefully."""
         # Setup mocks to raise exception
@@ -344,7 +344,7 @@ class TestRun:
         assert "Test error" in result['explanation']
 
     @patch('src.agents.keyword_agent.KeywordRetrieval')
-    @patch('src.agents.keyword_agent.Agent')
+    @patch('src.agents.sql_agent.Agent')
     def test_run_uses_top_k_parameter(self, mock_agent_class, mock_retrieval_class, sample_schema_file, mock_retrieval_results, mock_sql_response):
         """Test that run uses the configured top_k_tables parameter."""
         # Setup mocks
@@ -372,7 +372,7 @@ class TestFormatResponse:
     """Tests for _format_response method (inherited from BaseAgent)."""
 
     @patch('src.agents.keyword_agent.KeywordRetrieval')
-    @patch('src.agents.keyword_agent.Agent')
+    @patch('src.agents.sql_agent.Agent')
     def test_format_response(self, mock_agent_class, mock_retrieval_class, sample_schema_file, mock_sql_response):
         """Test response formatting."""
         agent = KeywordAgent(schema_path=sample_schema_file)
@@ -389,7 +389,7 @@ class TestHandleError:
     """Tests for _handle_error method (inherited from BaseAgent)."""
 
     @patch('src.agents.keyword_agent.KeywordRetrieval')
-    @patch('src.agents.keyword_agent.Agent')
+    @patch('src.agents.sql_agent.Agent')
     def test_handle_error(self, mock_agent_class, mock_retrieval_class, sample_schema_file):
         """Test error handling."""
         agent = KeywordAgent(schema_path=sample_schema_file)

@@ -2,7 +2,6 @@
 
 import pytest
 import tempfile
-import pickle
 import numpy as np
 from pathlib import Path
 from unittest.mock import Mock, patch, MagicMock
@@ -85,11 +84,11 @@ class TestSemanticRetrieval:
 
     @patch('src.retrieval.semantic_retrieval.SentenceTransformer')
     def test_cache_saving(self, mock_st_class, sample_schemas, mock_sentence_transformer):
-        """Test that embeddings are cached correctly."""
+        """Test that embeddings are cached correctly using numpy format."""
         mock_st_class.return_value = mock_sentence_transformer
 
         with tempfile.TemporaryDirectory() as tmpdir:
-            cache_path = Path(tmpdir) / "embeddings.pkl"
+            cache_path = Path(tmpdir) / "embeddings.npz"
 
             retrieval = SemanticRetrieval(
                 sample_schemas,
@@ -100,13 +99,12 @@ class TestSemanticRetrieval:
             # Cache file should exist
             assert cache_path.exists()
 
-            # Cache should contain correct data
-            with open(cache_path, 'rb') as f:
-                cache = pickle.load(f)
+            # Cache should contain correct data using numpy format
+            cache = np.load(cache_path, allow_pickle=False)
 
             assert 'model_name' in cache
-            assert cache['model_name'] == "test-model"
-            assert 'embeddings' in cache
+            assert str(cache['model_name']) == "test-model"
+            assert 'table_names' in cache
             assert 'descriptions' in cache
 
     @patch('src.retrieval.semantic_retrieval.SentenceTransformer')
@@ -115,7 +113,7 @@ class TestSemanticRetrieval:
         mock_st_class.return_value = mock_sentence_transformer
 
         with tempfile.TemporaryDirectory() as tmpdir:
-            cache_path = Path(tmpdir) / "embeddings.pkl"
+            cache_path = Path(tmpdir) / "embeddings.npz"
 
             # First instance creates cache
             retrieval1 = SemanticRetrieval(
@@ -146,7 +144,7 @@ class TestSemanticRetrieval:
         mock_st_class.return_value = mock_sentence_transformer
 
         with tempfile.TemporaryDirectory() as tmpdir:
-            cache_path = Path(tmpdir) / "embeddings.pkl"
+            cache_path = Path(tmpdir) / "embeddings.npz"
 
             # Create cache with model1
             retrieval1 = SemanticRetrieval(

@@ -1,8 +1,26 @@
 """Base agent class for SQL query generation."""
 
 from abc import ABC, abstractmethod
-from typing import Dict, Any
+from typing import Dict, Any, List, Protocol, runtime_checkable
 from pydantic import BaseModel, Field
+
+
+@runtime_checkable
+class Retriever(Protocol):
+    """Protocol for table retrieval strategies."""
+
+    def get_top_k(self, question: str, k: int = 5) -> List[Dict[str, Any]]:
+        """
+        Retrieve top-k relevant tables for a question.
+
+        Args:
+            question: Natural language question
+            k: Number of tables to retrieve
+
+        Returns:
+            List of table schemas with metadata
+        """
+        ...
 
 
 class SQLQueryResponse(BaseModel):

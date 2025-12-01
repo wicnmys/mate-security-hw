@@ -80,6 +80,7 @@
 - **Option 3: Classification-based** - Use embedding similarity to known on-topic queries. If similarity below threshold → reject. Pros: Fast, cheap, deterministic. Cons: Needs curated examples, might miss edge cases.
 
 **💡 Other Potential Improvements:**
+- **Prompt Injection** - Add another validation layer which checks for prompt injections
 - **Retry Logic** - Automatic retry with exponential backoff on transient API failures
 - **Streaming Responses** - Stream partial results for better UX on complex queries
 - **Conversation Memory** - Handle follow-up questions (e.g., "now filter by user X")

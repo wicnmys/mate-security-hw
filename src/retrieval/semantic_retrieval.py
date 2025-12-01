@@ -1,10 +1,16 @@
 """Semantic retrieval using local embeddings for table selection."""
 
-import pickle
+import logging
 from pathlib import Path
 from typing import Dict, List, Any, Optional
+
 import numpy as np
 from sentence_transformers import SentenceTransformer
+
+from src.utils.schema_loader import get_table_description
+from src.constants import DEFAULT_EMBEDDING_MODEL
+
+logger = logging.getLogger(__name__)
 
 
 class SemanticRetrieval:
@@ -18,7 +24,7 @@ class SemanticRetrieval:
     def __init__(
         self,
         schemas: Dict[str, Any],
-        embedding_model: str = "multi-qa-mpnet-base-dot-v1",
+        embedding_model: str = DEFAULT_EMBEDDING_MODEL,
         cache_path: Optional[str] = None
     ):
         """
@@ -34,9 +40,9 @@ class SemanticRetrieval:
         self.cache_path = cache_path
 
         # Initialize sentence-transformers model
-        print(f"Loading embedding model: {embedding_model}...")
+        logger.info("Loading embedding model: %s", embedding_model)
         self.model = SentenceTransformer(embedding_model)
-        print(f"✓ Model loaded")
+        logger.info("Model loaded successfully")
 
         # Pre-compute table embeddings
         self.table_embeddings: Dict[str, np.ndarray] = {}
@@ -48,24 +54,28 @@ class SemanticRetrieval:
         # Try to load from cache
         if self.cache_path and Path(self.cache_path).exists():
             try:
-                with open(self.cache_path, 'rb') as f:
-                    cache = pickle.load(f)
+                cache = np.load(self.cache_path, allow_pickle=False)
 
-                    # Verify cache is for the same model
-                    if cache.get('model_name') == self.embedding_model_name:
-                        self.table_embeddings = cache['embeddings']
-                        self.table_descriptions = cache['descriptions']
-                        print(f"✓ Loaded embeddings from cache: {self.cache_path}")
-                        return
-                    else:
-                        print(f"⚠️  Cache model mismatch, recomputing embeddings...")
-            except Exception as e:
-                print(f"⚠️  Could not load cache: {e}")
+                # Verify cache is for the same model
+                cached_model_name = str(cache['model_name'])
+                if cached_model_name == self.embedding_model_name:
+                    # Load embeddings from cache
+                    table_names = list(cache['table_names'])
+                    descriptions = list(cache['descriptions'])
+
+                    for i, table_name in enumerate(table_names):
+                        self.table_embeddings[table_name] = cache[f'emb_{i}']
+                        self.table_descriptions[table_name] = descriptions[i]
+
+                    logger.info("Loaded embeddings from cache: %s", self.cache_path)
+                    return
+                else:
+                    logger.warning("Cache model mismatch, recomputing embeddings...")
+            except (ValueError, KeyError, IOError) as e:
+                logger.warning("Could not load cache: %s", e)
 
         # Compute embeddings for each table
-        from src.utils.schema_loader import get_table_description
-
-        print(f"Computing embeddings for {len(self.schemas)} tables...")
+        logger.info("Computing embeddings for %d tables...", len(self.schemas))
 
         # Collect all descriptions
         descriptions = []
@@ -92,23 +102,28 @@ class SemanticRetrieval:
         for table_name, embedding in zip(table_names, embeddings):
             self.table_embeddings[table_name] = embedding
 
-        print(f"✓ Computed {len(self.table_embeddings)} embeddings")
+        logger.info("Computed %d embeddings", len(self.table_embeddings))
 
-        # Save to cache
+        # Save to cache using numpy's safer format
         if self.cache_path:
             try:
                 cache_dir = Path(self.cache_path).parent
                 cache_dir.mkdir(parents=True, exist_ok=True)
 
-                with open(self.cache_path, 'wb') as f:
-                    pickle.dump({
-                        'model_name': self.embedding_model_name,
-                        'embeddings': self.table_embeddings,
-                        'descriptions': self.table_descriptions
-                    }, f)
-                print(f"✓ Saved embeddings to cache: {self.cache_path}")
-            except Exception as e:
-                print(f"⚠️  Could not save cache: {e}")
+                # Build save dict with embeddings
+                save_dict = {
+                    'model_name': np.array(self.embedding_model_name),
+                    'table_names': np.array(table_names),
+                    'descriptions': np.array(descriptions),
+                }
+                # Add embeddings with indexed keys
+                for i, table_name in enumerate(table_names):
+                    save_dict[f'emb_{i}'] = self.table_embeddings[table_name]
+
+                np.savez(self.cache_path, **save_dict)
+                logger.info("Saved embeddings to cache: %s", self.cache_path)
+            except (IOError, OSError) as e:
+                logger.warning("Could not save cache: %s", e)
 
     def _embed_text(self, text: str) -> np.ndarray:
         """
