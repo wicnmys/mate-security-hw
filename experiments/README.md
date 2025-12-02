@@ -29,6 +29,7 @@ python experiments/generate_test_cases.py \
 - `--simple N`: Number of simple test cases (single table queries)
 - `--medium N`: Number of medium test cases (aggregations, GROUP BY)
 - `--complex N`: Number of complex test cases (JOINs, subqueries)
+- `--integrity N`: Number of integrity test cases per category (6 categories total)
 - `--model`: LLM model for generation (default: `claude-sonnet-4-5`)
 
 **Output:** JSON file with test cases (question, reference SQL, expected tables, complexity, category)
@@ -41,7 +42,7 @@ Compare agents on the generated test cases:
 # Run main experiment with default settings
 python experiments/run_experiments.py \
   --experiment-type main \
-  --agents keyword semantic react react_v2
+  --agents keyword semantic react react-v2
 
 # Run integrity tests
 python experiments/run_experiments.py \
@@ -57,7 +58,7 @@ python experiments/run_experiments.py \
 
 **Options:**
 - `--experiment-type`: Type of experiment (`main`, `integrity`, `consistency`)
-- `--agents`: Which agents to test (`keyword`, `semantic`, `react`, `react_v2`)
+- `--agents`: Which agents to test (`keyword`, `semantic`, `react`, `react-v2`)
 - `--judge`: Judge type (`correctness`, `categorical`, `integrity`)
 - `--judge-model`: LLM model for evaluation (default: `claude-sonnet-4-5`)
 - `--limit N`: Run only first N test cases (for testing)
@@ -90,6 +91,13 @@ python experiments/generate_report.py \
   --results experiments/results/main/*.json \
   --output experiments/reports/comparison.md
 ```
+
+**How it works:** Each judge class implements its own `generate_report_sections()` method that produces judge-specific analysis (e.g., correctness breakdowns, integrity pass rates). The report generator orchestrates this by:
+1. Generating shared sections (executive summary, agent config, latency/token comparison)
+2. Calling each judge's `generate_report_sections()` for specialized analysis
+3. Stitching everything together into a unified markdown report
+
+**Tip:** This decoupled design means you can change evaluation criteria without re-running experiments. Simply add a new judge class, use `rejudge.py` to re-evaluate existing results, then regenerate the report.
 
 ## Experiment Types
 
@@ -140,8 +148,8 @@ experiments/
 │   ├── correctness_judge.py    # 0.0-1.0 scoring
 │   ├── categorical_judge.py    # 1-5 scoring
 │   └── integrity_judge.py      # Pass/fail scoring
+├── planning/                   # Planning documents
 ├── reports/                    # Generated reports
-│   └── agent_comparison_report.md
 ├── results/                    # Experiment results (by type)
 │   ├── main/                   # Main experiment results
 │   ├── integrity/              # Security test results
@@ -175,10 +183,10 @@ Example: `sonnet_4_5_keyword-semantic_correctness_20251202T101500.json`
 python experiments/generate_test_cases.py --simple 10 --medium 10 --complex 5
 
 # Step 2: Run main experiments
-python experiments/run_experiments.py --experiment-type main --agents keyword semantic react react_v2
+python experiments/run_experiments.py --experiment-type main --agents keyword semantic react react-v2
 
 # Step 3: Run integrity tests
-python experiments/run_experiments.py --experiment-type integrity --agents keyword semantic react react_v2
+python experiments/run_experiments.py --experiment-type integrity --agents keyword semantic react react-v2
 
 # Step 4: Re-judge with categorical judge for comparison
 python experiments/rejudge.py experiments/results/main/latest.json --judge categorical
@@ -201,14 +209,20 @@ To compare a new agent architecture:
            pass
    ```
 
-2. Add to `run_experiments.py`:
+2. Register in `src/agents/registry.py`:
    ```python
-   if "myagent" in args.agents:
-       from src.agents.my_agent import MyAgent
-       agents['myagent'] = MyAgent(schema_path=args.schema_path)
+   from src.agents.my_agent import MyAgent
+
+   AGENT_REGISTRY: Dict[str, Type[BaseAgent]] = {
+       "keyword": KeywordAgent,
+       "semantic": SemanticAgent,
+       "react": ReActAgent,
+       "react-v2": ReActAgentV2,
+       "myagent": MyAgent,  # Add here
+   }
    ```
 
-3. Update argparse choices and run:
+3. Run experiments:
    ```bash
    python experiments/run_experiments.py --agents keyword semantic myagent
    ```
