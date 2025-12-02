@@ -1,7 +1,7 @@
 """Keyword-based table retrieval."""
 
 import re
-from typing import Dict, List, Any, Tuple
+from typing import Dict, List, Any
 
 from src.constants import MIN_KEYWORD_LENGTH
 
