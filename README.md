@@ -11,7 +11,7 @@ This project implements a production-ready SQL agent that:
 - Uses semantic retrieval to find relevant tables from a 20-table security schema
 - Validates generated SQL for correctness and safety
 - Provides explanations and confidence scores
-- Includes comprehensive testing (168 tests: 159 unit + 9 integration)
+- Includes comprehensive testing (288 tests: unit + integration)
 - Features experimental comparison of agent architectures
 
 **Key Features:**
@@ -67,6 +67,17 @@ python main.py "Find suspicious file access events" --json
 
 ## Architecture
 
+### Agent Types
+
+This project implements multiple agent architectures for SQL generation. Each agent has a detailed documentation card:
+
+| Agent | Description | Documentation |
+|-------|-------------|---------------|
+| **KeywordAgent** | Lightweight agent using keyword-based table retrieval | [Agent Card](src/agents/agent_cards/keyword_agent.md) |
+| **SemanticAgent** | Uses embedding-based semantic retrieval for better NL understanding | [Agent Card](src/agents/agent_cards/semantic_agent.md) |
+| **ReActAgent** | Iterative tool-use agent with self-correction capabilities | [Agent Card](src/agents/agent_cards/react_agent.md) |
+| **ReActAgentV2** | Enhanced ReAct with dual validation (structural + LLM judge) | [Agent Card](src/agents/agent_cards/react_agent_v2.md) |
+
 ### System Components
 
 ```
@@ -119,9 +130,10 @@ python main.py "Find suspicious file access events" --json
 - Better accuracy than keyword matching for security queries
 - Precomputed embeddings saved in `embeddings_cache/`
 
-**2. Single Agent Architecture**
-- One agent with structured output (Pydantic `SQLQueryResponse`)
-- Simpler than multi-agent pipeline, easier to debug
+**2. Multiple Agent Architectures**
+- **Simple agents**: KeywordAgent and SemanticAgent for single-pass generation
+- **ReAct agents**: Iterative tool-use with self-correction (ReActAgent, ReActAgentV2)
+- All agents use structured output (Pydantic `SQLQueryResponse`)
 - Uses Agno framework for reliability
 
 **3. Prompt Caching Strategy**
@@ -381,8 +393,6 @@ python main.py "Show me all quantum blockchain NFT transactions"
 ```bash
 # Unit tests only (no API key required)
 pytest tests/ -v -m "not integration"
-
-# Output: 159 passed in ~4s
 ```
 
 ### Run Integration Tests (Requires API Key)
@@ -393,8 +403,6 @@ export ANTHROPIC_API_KEY=your-key-here
 
 # Run integration tests (validates real API contracts)
 pytest tests/integration/ -v -m integration
-
-# Output: 9 tests (6 passed, 3 skipped on Haiku)
 ```
 
 ### Run Specific Tests
@@ -411,6 +419,12 @@ pytest tests/test_validator.py -v
 
 # Test agents
 pytest tests/test_semantic_agent.py tests/test_keyword_agent.py -v
+
+# Test ReAct agents
+pytest tests/test_react_agent.py tests/test_react_agent_v2.py -v
+
+# Test experiment framework
+pytest tests/test_judges.py tests/test_experiment_configs.py -v
 ```
 
 ## Experiments
@@ -451,10 +465,19 @@ See [experiments/README.md](experiments/README.md) for detailed documentation.
 ```
 mate-security-hw/
 ├── src/
+│   ├── constants.py             # Configuration constants
 │   ├── agents/
 │   │   ├── base.py              # Abstract base agent
-│   │   ├── semantic_agent.py    # Main agent (semantic retrieval)
-│   │   └── keyword_agent.py     # Baseline agent (keyword retrieval)
+│   │   ├── sql_agent.py         # Core SQL agent with pluggable retrieval
+│   │   ├── keyword_agent.py     # Keyword-based retrieval agent
+│   │   ├── semantic_agent.py    # Semantic retrieval agent
+│   │   ├── react_agent.py       # ReAct agent with tool-use loop
+│   │   ├── react_agent_v2.py    # Enhanced ReAct with LLM judge
+│   │   └── agent_cards/         # Agent documentation
+│   │       ├── keyword_agent.md
+│   │       ├── semantic_agent.md
+│   │       ├── react_agent.md
+│   │       └── react_agent_v2.md
 │   ├── retrieval/
 │   │   ├── semantic_retrieval.py  # Embedding-based retrieval
 │   │   └── keyword_retrieval.py   # Keyword-based retrieval
@@ -462,17 +485,26 @@ mate-security-hw/
 │       ├── schema_loader.py     # Load and format schemas
 │       └── validator.py         # SQL validation
 ├── tests/
-│   ├── test_*.py               # Unit tests (159 tests)
-│   └── integration/            # Integration tests (9 tests)
+│   ├── test_*.py               # Unit tests
+│   └── integration/            # Integration tests
 │       ├── test_agent_initialization.py
 │       ├── test_llm_judge.py
-│       └── test_caching_parameters.py
+│       ├── test_caching_parameters.py
+│       └── test_run_experiments.py
 ├── experiments/
+│   ├── configs/                 # Experiment configurations
+│   │   └── experiment_config.py
+│   ├── judges/                  # LLM judge implementations
+│   │   ├── base.py
+│   │   ├── correctness_judge.py
+│   │   ├── categorical_judge.py
+│   │   └── integrity_judge.py
 │   ├── utils/
 │   │   ├── metrics.py          # Correctness, precision, latency
 │   │   └── llm_judge.py        # LLM-as-judge evaluation
 │   ├── generate_test_cases.py
 │   ├── run_experiments.py
+│   ├── rejudge.py              # Re-evaluate existing results
 │   ├── generate_report.py
 │   └── README.md
 ├── schemas/
@@ -512,9 +544,8 @@ mate-security-hw/
 - Includes reasoning steps and confidence
 
 ### 5. Comprehensive Testing
-- **159 unit tests**: Fast, mocked, no API keys
-- **9 integration tests**: Real API validation
-- **Test coverage**: Schema loading, retrieval, validation, agents
+- **288 total tests**: Unit tests (fast, mocked) + integration tests (real API)
+- **Test coverage**: Schema loading, retrieval, validation, all agent types, experiments
 - **CI-ready**: Separate test markers for unit vs integration
 
 ## Configuration Options
@@ -550,8 +581,8 @@ INTEGRATION_TEST_MODEL  # Optional: Model for integration tests (default: claude
 - Integration tests: ~$0.10 per run (Haiku)
 
 ### Test Execution
-- Unit tests: ~4s for 159 tests
-- Integration tests: ~30s for 9 tests
+- Unit tests: ~4s for all unit tests
+- Integration tests: ~30s for integration tests
 
 ## Development
 
@@ -569,7 +600,8 @@ See [DEVELOPMENT.md](DEVELOPMENT.md) for:
 1. Subclass `BaseAgent` in `src/agents/`
 2. Implement `__init__` and `run` methods
 3. Add tests in `tests/test_your_agent.py`
-4. Update experiments to include new agent
+4. Create an agent card in `src/agents/agent_cards/`
+5. Update experiments to include new agent
 
 **Add a new retrieval strategy:**
 1. Create new class in `src/retrieval/`
@@ -581,7 +613,6 @@ See [DEVELOPMENT.md](DEVELOPMENT.md) for:
 
 1. **No database execution**: Agent generates SQL but doesn't execute it
 2. **Haiku limitations**: Doesn't support structured outputs (skips some integration tests)
-3. **Single retrieval pass**: No iterative refinement based on LLM feedback
 
 ## Future Improvements
 
