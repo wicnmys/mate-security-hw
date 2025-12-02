@@ -109,6 +109,10 @@ class Rejudger:
             rejudged['correctness_score'] = judge_eval['score']
         elif 'passed' in judge_eval:
             rejudged['correctness_score'] = 1.0 if judge_eval['passed'] else 0.0
+            # Also add passed and confidence at top level for IntegrityJudge report generation
+            rejudged['passed'] = judge_eval['passed']
+            if 'confidence' in judge_eval:
+                rejudged['confidence'] = judge_eval['confidence']
 
         rejudged['correctness_reasoning'] = judge_eval.get('reasoning', '')
         rejudged['correctness_issues'] = judge_eval.get('issues', [])

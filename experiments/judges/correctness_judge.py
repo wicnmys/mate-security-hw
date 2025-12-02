@@ -1,6 +1,6 @@
 """Correctness judge for SQL evaluation (0.0-1.0 scoring)."""
 
-from typing import Dict, Any
+from typing import Dict, Any, List
 from agno.agent import Agent
 from agno.models.anthropic import Claude
 from pydantic import BaseModel, Field
@@ -146,3 +146,196 @@ Compare the generated SQL to the reference SQL and assess whether it correctly a
                 'reasoning': f'Evaluation failed: {str(e)}',
                 'issues': ['LLM evaluation error']
             }
+
+    @classmethod
+    def generate_report_sections(cls, results: List[Dict[str, Any]]) -> Dict[str, str]:
+        """Generate correctness-specific report sections.
+
+        Args:
+            results: List of result dicts with 'correctness_score', 'agent', etc.
+
+        Returns:
+            Dict with 'methodology', 'results_table', 'complexity_breakdown',
+            'category_breakdown', 'failure_analysis' sections.
+        """
+        sections = {}
+
+        # Methodology section
+        sections['methodology'] = cls._generate_methodology()
+
+        # Get unique agents
+        agents = sorted(set(r.get('agent', 'unknown') for r in results))
+
+        # Results table
+        sections['results_table'] = cls._generate_results_table(results, agents)
+
+        # Complexity breakdown
+        sections['complexity_breakdown'] = cls._generate_complexity_breakdown(results, agents)
+
+        # Category breakdown
+        sections['category_breakdown'] = cls._generate_category_breakdown(results, agents)
+
+        # Failure analysis
+        sections['failure_analysis'] = cls._generate_failure_analysis(results, agents)
+
+        return sections
+
+    @classmethod
+    def _generate_methodology(cls) -> str:
+        """Generate methodology section describing the scoring rubric."""
+        return """## Correctness Evaluation
+
+### Scoring Rubric (0.0 - 1.0)
+
+| Score | Description |
+|-------|-------------|
+| 1.0 | Perfectly correct, fully equivalent to reference |
+| 0.9 | Correct logic, minor cosmetic differences |
+| 0.8 | Correct approach, minor issues |
+| 0.7 | Mostly correct, one significant issue |
+| 0.5-0.6 | Partially correct |
+| 0.3-0.4 | Wrong approach but related tables |
+| 0.0-0.2 | Completely wrong |
+
+### Evaluation Criteria
+1. **Table Selection**: Does it query the right tables?
+2. **Filtering/Conditions**: Does it use the right WHERE clauses?
+3. **Columns**: Does it select the right columns?
+4. **Aggregations**: Are GROUP BY, HAVING, COUNT, etc. used correctly?
+5. **Joins**: Are multi-table joins done correctly?
+6. **Ordering/Limiting**: Are ORDER BY and LIMIT used appropriately?
+"""
+
+    @classmethod
+    def _generate_results_table(cls, results: List[Dict[str, Any]], agents: List[str]) -> str:
+        """Generate overall results table."""
+        lines = [
+            "## Overall Correctness Results\n",
+            "| Agent | Avg Score | Min | Max | Count |",
+            "|-------|-----------|-----|-----|-------|",
+        ]
+
+        for agent in agents:
+            agent_results = [r for r in results if r.get('agent') == agent]
+            if not agent_results:
+                continue
+
+            scores = [r.get('correctness_score', 0) for r in agent_results]
+            avg_score = sum(scores) / len(scores) if scores else 0
+            min_score = min(scores) if scores else 0
+            max_score = max(scores) if scores else 0
+
+            lines.append(
+                f"| {agent.upper()} | {avg_score:.1%} | {min_score:.2f} | {max_score:.2f} | {len(scores)} |"
+            )
+
+        lines.append("")
+        return "\n".join(lines)
+
+    @classmethod
+    def _generate_complexity_breakdown(cls, results: List[Dict[str, Any]], agents: List[str]) -> str:
+        """Generate results breakdown by complexity level."""
+        lines = ["## Results by Complexity\n"]
+
+        complexities = ['simple', 'medium', 'complex']
+
+        for complexity in complexities:
+            complexity_results = [r for r in results if r.get('complexity') == complexity]
+            if not complexity_results:
+                continue
+
+            lines.append(f"### {complexity.title()} Queries\n")
+            lines.append("| Agent | Avg Score | Count |")
+            lines.append("|-------|-----------|-------|")
+
+            for agent in agents:
+                agent_results = [r for r in complexity_results if r.get('agent') == agent]
+                if not agent_results:
+                    lines.append(f"| {agent.upper()} | N/A | 0 |")
+                    continue
+
+                scores = [r.get('correctness_score', 0) for r in agent_results]
+                avg_score = sum(scores) / len(scores) if scores else 0
+                lines.append(f"| {agent.upper()} | {avg_score:.1%} | {len(scores)} |")
+
+            lines.append("")
+
+        return "\n".join(lines)
+
+    @classmethod
+    def _generate_category_breakdown(cls, results: List[Dict[str, Any]], agents: List[str]) -> str:
+        """Generate results breakdown by category."""
+        lines = ["## Results by Category\n"]
+
+        # Get all unique categories (excluding integrity)
+        categories = sorted(set(
+            r.get('category', 'unknown')
+            for r in results
+            if r.get('category') and r.get('category') != 'integrity'
+        ))
+
+        for category in categories:
+            category_results = [r for r in results if r.get('category') == category]
+            if not category_results:
+                continue
+
+            lines.append(f"### {category.title()}\n")
+            lines.append("| Agent | Avg Score | Count |")
+            lines.append("|-------|-----------|-------|")
+
+            for agent in agents:
+                agent_results = [r for r in category_results if r.get('agent') == agent]
+                if not agent_results:
+                    lines.append(f"| {agent.upper()} | N/A | 0 |")
+                    continue
+
+                scores = [r.get('correctness_score', 0) for r in agent_results]
+                avg_score = sum(scores) / len(scores) if scores else 0
+                lines.append(f"| {agent.upper()} | {avg_score:.1%} | {len(scores)} |")
+
+            lines.append("")
+
+        return "\n".join(lines)
+
+    @classmethod
+    def _generate_failure_analysis(cls, results: List[Dict[str, Any]], agents: List[str]) -> str:
+        """Generate failure analysis for low-scoring results."""
+        lines = ["## Failure Analysis (Score < 0.5)\n"]
+
+        threshold = 0.5
+
+        for agent in agents:
+            agent_failures = [
+                r for r in results
+                if r.get('agent') == agent and r.get('correctness_score', 1) < threshold
+            ]
+
+            lines.append(f"### {agent.upper()} ({len(agent_failures)} failures)\n")
+
+            if not agent_failures:
+                lines.append("No significant failures.\n")
+                continue
+
+            # Group by issue type
+            issue_counts: Dict[str, int] = {}
+            for failure in agent_failures:
+                for issue in failure.get('correctness_issues', []):
+                    issue_counts[issue] = issue_counts.get(issue, 0) + 1
+
+            if issue_counts:
+                lines.append("**Common Issues:**")
+                for issue, count in sorted(issue_counts.items(), key=lambda x: -x[1])[:5]:
+                    lines.append(f"- {issue} ({count} cases)")
+                lines.append("")
+
+            # Show worst cases
+            worst_cases = sorted(agent_failures, key=lambda x: x.get('correctness_score', 0))[:3]
+            if worst_cases:
+                lines.append("**Worst Cases:**")
+                for case in worst_cases:
+                    question = case.get('question', 'N/A')[:80]
+                    score = case.get('correctness_score', 0)
+                    lines.append(f"- [{score:.2f}] {question}...")
+                lines.append("")
+
+        return "\n".join(lines)

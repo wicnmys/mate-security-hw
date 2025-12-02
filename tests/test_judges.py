@@ -35,6 +35,10 @@ class TestBaseJudge:
             def evaluate(self, question, reference_sql, generated_sql, **kwargs):
                 return {}
 
+            @classmethod
+            def generate_report_sections(cls, results):
+                return {}
+
         judge = ConcreteJudge()
         assert judge.identifier == "claude-sonnet-4-5_test_v1"
 
@@ -45,6 +49,10 @@ class TestBaseJudge:
             model_name = "claude-sonnet-4-5"
 
             def evaluate(self, question, reference_sql, generated_sql, **kwargs):
+                return {}
+
+            @classmethod
+            def generate_report_sections(cls, results):
                 return {}
 
         judge = ConcreteJudge()

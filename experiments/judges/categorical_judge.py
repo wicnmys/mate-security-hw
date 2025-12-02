@@ -1,6 +1,6 @@
 """Categorical judge for SQL evaluation (1-5 integer scoring)."""
 
-from typing import Dict, Any
+from typing import Dict, Any, List
 from agno.agent import Agent
 from agno.models.anthropic import Claude
 from pydantic import BaseModel, Field
@@ -179,3 +179,168 @@ Categorize the generated SQL into one of the five quality categories (1-WRONG to
         """Convert a category name to its score."""
         reverse_map = {v: k for k, v in cls.CATEGORIES.items()}
         return reverse_map.get(category.upper(), 1)
+
+    @classmethod
+    def generate_report_sections(cls, results: List[Dict[str, Any]]) -> Dict[str, str]:
+        """Generate categorical-specific report sections.
+
+        Args:
+            results: List of result dicts with 'score' (1-5), 'category', 'agent', etc.
+
+        Returns:
+            Dict with 'methodology', 'results_table', 'distribution',
+            'failure_analysis' sections.
+        """
+        sections = {}
+
+        # Methodology section
+        sections['methodology'] = cls._generate_methodology()
+
+        # Get unique agents
+        agents = sorted(set(r.get('agent', 'unknown') for r in results))
+
+        # Results table with category distribution
+        sections['results_table'] = cls._generate_results_table(results, agents)
+
+        # Score distribution
+        sections['distribution'] = cls._generate_distribution(results, agents)
+
+        # Failure analysis (score <= 2)
+        sections['failure_analysis'] = cls._generate_failure_analysis(results, agents)
+
+        return sections
+
+    @classmethod
+    def _generate_methodology(cls) -> str:
+        """Generate methodology section describing the categorical rubric."""
+        return """## Categorical Evaluation
+
+### Category Definitions (1-5)
+
+| Score | Category | Description |
+|-------|----------|-------------|
+| 5 | PERFECT | Semantically equivalent - fully correct, no issues |
+| 4 | GOOD | Functionally correct with minor issues |
+| 3 | PARTIAL | Some correct but incomplete |
+| 2 | POOR | Right tables but wrong logic |
+| 1 | WRONG | Wrong tables or syntax errors |
+
+### Evaluation Process
+1. Check if tables are correct (wrong tables = 1)
+2. Check if basic logic is correct (wrong logic = 2)
+3. Check if query is complete (missing parts = 3)
+4. Check for minor issues (minor issues = 4)
+5. Perfect match = 5
+"""
+
+    @classmethod
+    def _generate_results_table(cls, results: List[Dict[str, Any]], agents: List[str]) -> str:
+        """Generate results table with category distribution."""
+        lines = [
+            "## Categorical Results\n",
+            "| Agent | Avg Score | PERFECT | GOOD | PARTIAL | POOR | WRONG | Count |",
+            "|-------|-----------|---------|------|---------|------|-------|-------|",
+        ]
+
+        for agent in agents:
+            agent_results = [r for r in results if r.get('agent') == agent]
+            if not agent_results:
+                continue
+
+            # Count by category
+            scores = [r.get('score', 1) for r in agent_results]
+            avg_score = sum(scores) / len(scores) if scores else 0
+
+            category_counts = {1: 0, 2: 0, 3: 0, 4: 0, 5: 0}
+            for r in agent_results:
+                score = r.get('score', 1)
+                if score in category_counts:
+                    category_counts[score] += 1
+
+            lines.append(
+                f"| {agent.upper()} | {avg_score:.2f} | "
+                f"{category_counts[5]} | {category_counts[4]} | {category_counts[3]} | "
+                f"{category_counts[2]} | {category_counts[1]} | {len(scores)} |"
+            )
+
+        lines.append("")
+        return "\n".join(lines)
+
+    @classmethod
+    def _generate_distribution(cls, results: List[Dict[str, Any]], agents: List[str]) -> str:
+        """Generate score distribution breakdown."""
+        lines = ["## Score Distribution\n"]
+
+        for agent in agents:
+            agent_results = [r for r in results if r.get('agent') == agent]
+            if not agent_results:
+                continue
+
+            lines.append(f"### {agent.upper()}\n")
+
+            total = len(agent_results)
+            category_counts = {1: 0, 2: 0, 3: 0, 4: 0, 5: 0}
+            for r in agent_results:
+                score = r.get('score', 1)
+                if score in category_counts:
+                    category_counts[score] += 1
+
+            for score in [5, 4, 3, 2, 1]:
+                count = category_counts[score]
+                pct = (count / total * 100) if total > 0 else 0
+                category = cls.CATEGORIES.get(score, "UNKNOWN")
+                bar = "█" * int(pct / 5)  # Visual bar
+                lines.append(f"- **{score} ({category})**: {count} ({pct:.1f}%) {bar}")
+
+            lines.append("")
+
+        return "\n".join(lines)
+
+    @classmethod
+    def _generate_failure_analysis(cls, results: List[Dict[str, Any]], agents: List[str]) -> str:
+        """Generate failure analysis for low-scoring results (score <= 2)."""
+        lines = ["## Failure Analysis (Score <= 2)\n"]
+
+        for agent in agents:
+            agent_failures = [
+                r for r in results
+                if r.get('agent') == agent and r.get('score', 5) <= 2
+            ]
+
+            lines.append(f"### {agent.upper()} ({len(agent_failures)} failures)\n")
+
+            if not agent_failures:
+                lines.append("No significant failures.\n")
+                continue
+
+            # Count by category
+            wrong_count = sum(1 for r in agent_failures if r.get('score') == 1)
+            poor_count = sum(1 for r in agent_failures if r.get('score') == 2)
+
+            lines.append(f"- WRONG (1): {wrong_count} cases")
+            lines.append(f"- POOR (2): {poor_count} cases\n")
+
+            # Group by issue type
+            issue_counts: Dict[str, int] = {}
+            for failure in agent_failures:
+                for issue in failure.get('issues', []):
+                    issue_counts[issue] = issue_counts.get(issue, 0) + 1
+
+            if issue_counts:
+                lines.append("**Common Issues:**")
+                for issue, count in sorted(issue_counts.items(), key=lambda x: -x[1])[:5]:
+                    lines.append(f"- {issue} ({count} cases)")
+                lines.append("")
+
+            # Show worst cases
+            worst_cases = sorted(agent_failures, key=lambda x: x.get('score', 5))[:3]
+            if worst_cases:
+                lines.append("**Worst Cases:**")
+                for case in worst_cases:
+                    question = case.get('question', 'N/A')[:80]
+                    score = case.get('score', 0)
+                    category = case.get('category', 'UNKNOWN')
+                    lines.append(f"- [{score} {category}] {question}...")
+                lines.append("")
+
+        return "\n".join(lines)

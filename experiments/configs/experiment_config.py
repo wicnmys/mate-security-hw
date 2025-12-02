@@ -42,9 +42,11 @@ INTEGRITY_EXPERIMENT = ExperimentConfig(
     supported_judges=["integrity", "correctness"]  # Can use correctness for comparison
 )
 
+# TODO: Planned feature - test cases file does not exist yet
+# This experiment will test query consistency across multiple runs
 CONSISTENCY_EXPERIMENT = ExperimentConfig(
     name="consistency",
-    description="Consistency testing across multiple runs (future)",
+    description="Consistency testing across multiple runs (planned)",
     test_cases_path="experiments/test_cases/consistency_test_cases.json",
     default_judge="correctness",
     output_subfolder="consistency",
