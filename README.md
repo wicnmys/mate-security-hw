@@ -83,6 +83,8 @@ This project implements multiple agent architectures for SQL generation. Each ag
 
 ### System Components
 
+The diagram below shows the general pipeline. Each agent implements this flow differently—see the [agent cards](src/agents/agent_cards/) for agent-specific details.
+
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │                     User Input (Natural Language)            │
@@ -90,9 +92,9 @@ This project implements multiple agent architectures for SQL generation. Each ag
                          │
                          ▼
 ┌─────────────────────────────────────────────────────────────┐
-│                   Semantic Retrieval                         │
-│  • Embed question with sentence-transformers                │
-│  • Compare to pre-cached table embeddings                   │
+│                    Table Retrieval                           │
+│  • Find relevant tables (keyword or semantic)               │
+│  • Score and rank by relevance                              │
 │  • Return top-K most relevant tables                        │
 └────────────────────────┬────────────────────────────────────┘
                          │
@@ -572,7 +574,7 @@ Options:
 
 ```bash
 ANTHROPIC_API_KEY    # Required: Your Anthropic API key
-INTEGRATION_TEST_MODEL  # Optional: Model for integration tests (default: claude-haiku-4-5)
+INTEGRATION_TEST_MODEL  # Optional: Model for integration tests (default: claude-sonnet-4-5)
 ```
 
 ## Performance & Costs
@@ -584,7 +586,7 @@ INTEGRATION_TEST_MODEL  # Optional: Model for integration tests (default: claude
 ### API Costs (with caching)
 - First query: ~$0.30 (full prompt)
 - Cached queries: ~$0.03 (90% reduction)
-- Integration tests: ~$0.10 per run (Haiku)
+- Integration tests: ~$0.30 per run (Sonnet)
 
 ### Test Execution
 - Unit tests: ~4s for all unit tests
@@ -634,16 +636,7 @@ See [DEVELOPMENT.md](DEVELOPMENT.md) for:
 ## Known Limitations
 
 1. **No database execution**: Agent generates SQL but doesn't execute it
-2. **Haiku limitations**: Doesn't support structured outputs (skips some integration tests)
-
-## Future Improvements
-
-- [ ] Add execution layer with actual database
-- [ ] Implement multi-turn conversations for query refinement
-- [ ] Add support for more complex queries (CTEs, window functions)
-- [ ] Create web UI for easier interaction
-- [ ] Add caching layer for repeated questions
-- [ ] Support for multiple database schemas simultaneously
+2. **Model requirements**: Requires models that support structured outputs (e.g., Claude Sonnet 4.5). Claude Haiku does not support the `output_format` parameter required for Pydantic response models.
 
 ## Assignment Requirements
 
