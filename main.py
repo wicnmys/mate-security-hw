@@ -8,10 +8,19 @@ Usage:
     python main.py "Find suspicious file access events" --model gpt-4
 """
 
+import os
+
+# Suppress tokenizers parallelism warning (must be set before importing transformers)
+os.environ["TOKENIZERS_PARALLELISM"] = "false"
+
 import argparse
 import json
+import logging
 import sys
 from pathlib import Path
+
+# Configure logging to suppress verbose error tracebacks in CLI output
+logging.basicConfig(level=logging.WARNING)
 
 from src.agents.registry import AGENT_REGISTRY, create_agent, get_agent_names
 

@@ -158,7 +158,7 @@ Generate a SQL query to answer this question."""
             return self._format_response(response)
 
         except Exception as e:
-            logger.exception("Error generating SQL query for question: %s", question)
+            logger.debug("Error generating SQL query for question: %s", question, exc_info=True)
             return self._handle_error(question, e)
 
     def _build_schema_context(self, relevant_tables: list[Dict[str, Any]]) -> str:
