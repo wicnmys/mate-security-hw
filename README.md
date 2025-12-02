@@ -432,34 +432,36 @@ pytest tests/test_judges.py tests/test_experiment_configs.py -v
 
 ## Experiments
 
-The project includes an experimental framework for comparing different agent architectures and approaches.
+The project includes an experimental framework for comparing agent architectures using LLM-as-judge evaluation.
 
 ### Generate Test Cases
 
 ```bash
-python experiments/generate_test_cases.py \
-  --schema-path schemas/dataset.json \
-  --output experiments/test_cases/test_cases.json \
-  --simple 10 --medium 10 --complex 5
+python experiments/generate_test_cases.py --simple 10 --medium 10 --complex 5
 ```
 
 ### Run Experiments
 
 ```bash
+# Compare agents on main SQL generation task
 python experiments/run_experiments.py \
-  --test-cases experiments/test_cases/generated_test_cases.json \
-  --schema-path schemas/dataset.json \
-  --agents keyword semantic \
-  --output experiments/results/results.json
+  --experiment-type main \
+  --agents keyword semantic react react-v2
+
+# Run integrity/security tests
+python experiments/run_experiments.py \
+  --experiment-type integrity \
+  --agents keyword semantic
 ```
 
 ### Generate Report
 
 ```bash
 python experiments/generate_report.py \
-  --results experiments/results/results.json \
-  --output experiments/comparison.md
+  --results experiments/results/main/*.json
 ```
+
+Each judge class generates its own report sections, which are stitched together by the report generator. This means you can add new evaluation criteria without re-running experiments—just create a new judge, use `rejudge.py` to re-evaluate, then regenerate the report.
 
 See [experiments/README.md](experiments/README.md) for detailed documentation.
 
