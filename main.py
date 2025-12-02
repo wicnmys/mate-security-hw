@@ -16,6 +16,7 @@ os.environ["TOKENIZERS_PARALLELISM"] = "false"
 import argparse
 import json
 import logging
+import readline  # Enable arrow keys and history in input()
 import sys
 from pathlib import Path
 
@@ -23,6 +24,61 @@ from pathlib import Path
 logging.basicConfig(level=logging.WARNING)
 
 from src.agents.registry import AGENT_REGISTRY, create_agent, get_agent_names
+
+
+def run_session(agent, agent_name: str, output_json: bool = False):
+    """Run an interactive session with the agent.
+
+    Args:
+        agent: Initialized agent instance
+        agent_name: Name of the agent type for display
+        output_json: Whether to output results as JSON
+    """
+    print(f"\n{'='*60}", file=sys.stderr)
+    print(f"Interactive session started with {agent_name} agent", file=sys.stderr)
+    print("Type 'exit' or 'quit' to end the session", file=sys.stderr)
+    print("Type 'help' for available commands", file=sys.stderr)
+    print(f"{'='*60}\n", file=sys.stderr)
+
+    while True:
+        try:
+            question = input("query> ").strip()
+
+            if not question:
+                continue
+
+            if question.lower() in ('exit', 'quit', 'q'):
+                print("\nSession ended.", file=sys.stderr)
+                break
+
+            if question.lower() == 'help':
+                print("\nAvailable commands:", file=sys.stderr)
+                print("  exit, quit, q  - End the session", file=sys.stderr)
+                print("  help           - Show this help message", file=sys.stderr)
+                print("  <question>     - Ask a natural language question\n", file=sys.stderr)
+                continue
+
+            # Process the query
+            print("Generating SQL query...\n", file=sys.stderr)
+            result = agent.run(question)
+
+            if output_json:
+                print(json.dumps(result, indent=2))
+            else:
+                if result.get('error'):
+                    print(f"Error: {result['error']}\n")
+                else:
+                    print(f"SQL: {result['query']}")
+                    print(f"Tables: {', '.join(result['tables_used'])}")
+                    print(f"Confidence: {result['confidence']:.2f}")
+                    print(f"Explanation: {result['explanation']}\n")
+
+        except EOFError:
+            print("\nSession ended.", file=sys.stderr)
+            break
+        except KeyboardInterrupt:
+            print("\n", file=sys.stderr)
+            continue  # Allow Ctrl+C to cancel current input without exiting
 
 
 def main():
@@ -37,13 +93,22 @@ Examples:
   python main.py "Find suspicious file access events" --agent react
   python main.py "What are the top 10 most common security event types?" --json
   python main.py "Show network traffic anomalies" --agent react-v2
+  python main.py --session --agent react  # Start interactive session
         """
     )
 
     parser.add_argument(
         "question",
         type=str,
-        help="Natural language question to convert to SQL"
+        nargs='?',  # Make optional for session mode
+        default=None,
+        help="Natural language question to convert to SQL (optional in session mode)"
+    )
+
+    parser.add_argument(
+        "--session",
+        action="store_true",
+        help="Start an interactive session (initialize once, query multiple times)"
     )
 
     parser.add_argument(
@@ -64,13 +129,13 @@ Examples:
         "--top-k",
         type=int,
         default=5,
-        help="Number of tables to retrieve for context (default: 5)"
+        help="Number of tables to retrieve for context (default: 5). Only for keyword/semantic agents"
     )
 
     parser.add_argument(
         "--explain",
         action="store_true",
-        help="Show which tables were retrieved and why"
+        help="Show which tables were retrieved and why. Only for keyword/semantic agents"
     )
 
     parser.add_argument(
@@ -89,6 +154,10 @@ Examples:
 
     args = parser.parse_args()
 
+    # Validate arguments
+    if not args.session and not args.question:
+        parser.error("Either provide a question or use --session for interactive mode")
+
     # Validate schema path
     if not Path(args.schema_path).exists():
         print(f"Error: Schema file not found: {args.schema_path}", file=sys.stderr)
@@ -103,6 +172,11 @@ Examples:
             model=args.model,
             top_k_tables=args.top_k
         )
+
+        # Session mode: enter interactive loop
+        if args.session:
+            run_session(agent, args.agent, output_json=args.json)
+            return
 
         # Show retrieval explanation if requested (only for agents that support it)
         if args.explain:
