@@ -706,28 +706,3 @@ Start by retrieving relevant tables for this question."""
             logger.exception("Error in ReAct agent v2: %s", e)
             return self._handle_error(question, e)
 
-    def explain_retrieval(self, question: str, k: int = DEFAULT_TOP_K_TABLES) -> Dict[str, Any]:
-        """
-        Explain which tables would be retrieved for a question.
-
-        Args:
-            question: Natural language question
-            k: Number of tables to retrieve
-
-        Returns:
-            Dictionary with retrieval information
-        """
-        relevant_tables = self.retriever.get_top_k(question=question, k=k)
-
-        return {
-            'question': question,
-            'tables_retrieved': [
-                {
-                    'table': t['table_name'],
-                    'category': t['schema'].get('category'),
-                    'score': t['score'],
-                    'description': t['schema'].get('description')
-                }
-                for t in relevant_tables
-            ]
-        }

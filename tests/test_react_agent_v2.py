@@ -371,37 +371,6 @@ class TestGetSuggestion:
         assert suggestion is None
 
 
-class TestExplainRetrieval:
-    """Tests for explain_retrieval method."""
-
-    @patch('src.agents.react_agent_v2.SemanticRetrieval')
-    @patch('src.agents.react_agent_v2.Agent')
-    def test_explain_retrieval(self, mock_agent_class, mock_retrieval_class, sample_schema_file, mock_retrieval_results):
-        """Test retrieval explanation."""
-        mock_retriever = Mock()
-        mock_retriever.get_top_k.return_value = mock_retrieval_results
-        mock_retrieval_class.return_value = mock_retriever
-
-        agent = ReActAgentV2(schema_path=sample_schema_file)
-        result = agent.explain_retrieval("test question", k=3)
-
-        # Should call retriever with correct parameters
-        mock_retriever.get_top_k.assert_called_once_with(question="test question", k=3)
-
-        # Should return structured explanation
-        assert 'question' in result
-        assert result['question'] == "test question"
-        assert 'tables_retrieved' in result
-        assert len(result['tables_retrieved']) == 1
-
-        # Check table info structure
-        table_info = result['tables_retrieved'][0]
-        assert 'table' in table_info
-        assert 'category' in table_info
-        assert 'score' in table_info
-        assert 'description' in table_info
-
-
 class TestRun:
     """Tests for run method."""
 

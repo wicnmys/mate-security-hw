@@ -104,23 +104,26 @@ Examples:
             top_k_tables=args.top_k
         )
 
-        # Show retrieval explanation if requested
+        # Show retrieval explanation if requested (only for agents that support it)
         if args.explain:
-            print("\n" + "="*80, file=sys.stderr)
-            print("RETRIEVAL EXPLANATION", file=sys.stderr)
-            print("="*80, file=sys.stderr)
+            if hasattr(agent, 'explain_retrieval'):
+                print("\n" + "="*80, file=sys.stderr)
+                print("RETRIEVAL EXPLANATION", file=sys.stderr)
+                print("="*80, file=sys.stderr)
 
-            retrieval_info = agent.explain_retrieval(args.question, k=args.top_k)
+                retrieval_info = agent.explain_retrieval(args.question, k=args.top_k)
 
-            print(f"\nQuestion: {retrieval_info['question']}\n", file=sys.stderr)
-            print(f"Retrieved {len(retrieval_info['tables_retrieved'])} tables:\n", file=sys.stderr)
+                print(f"\nQuestion: {retrieval_info['question']}\n", file=sys.stderr)
+                print(f"Retrieved {len(retrieval_info['tables_retrieved'])} tables:\n", file=sys.stderr)
 
-            for i, table in enumerate(retrieval_info['tables_retrieved'], 1):
-                print(f"{i}. {table['table']} (score: {table['score']:.3f})", file=sys.stderr)
-                print(f"   Category: {table['category']}", file=sys.stderr)
-                print(f"   Description: {table['description']}\n", file=sys.stderr)
+                for i, table in enumerate(retrieval_info['tables_retrieved'], 1):
+                    print(f"{i}. {table['table']} (score: {table['score']:.3f})", file=sys.stderr)
+                    print(f"   Category: {table['category']}", file=sys.stderr)
+                    print(f"   Description: {table['description']}\n", file=sys.stderr)
 
-            print("="*80 + "\n", file=sys.stderr)
+                print("="*80 + "\n", file=sys.stderr)
+            else:
+                print(f"\nNote: --explain is not supported for {args.agent} agent (retrieval happens dynamically)\n", file=sys.stderr)
 
         # Generate SQL query
         print("Generating SQL query...\n", file=sys.stderr)
