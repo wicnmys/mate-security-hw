@@ -1,0 +1,1774 @@
+{
+  "metadata": {
+    "timestamp": "2025-12-01T22:49:52.120801",
+    "agents": {
+      "keyword": {
+        "type": "keyword",
+        "llm_model": "claude-sonnet-4-5",
+        "top_k": 5,
+        "schema_path": "schemas/dataset.json"
+      },
+      "semantic": {
+        "type": "semantic",
+        "llm_model": "claude-sonnet-4-5",
+        "embedding_model": "multi-qa-mpnet-base-dot-v1",
+        "top_k": 5,
+        "schema_path": "schemas/dataset.json"
+      }
+    },
+    "total_test_cases": 21,
+    "judge_model": "claude-sonnet-4-5"
+  },
+  "results": [
+    {
+      "agent": "keyword",
+      "test_case_id": "test_sim_001",
+      "question": "Show me all critical severity endpoint events from the last 24 hours",
+      "reference_sql": "SELECT * FROM endpoint_events WHERE severity = 'critical' AND timestamp >= NOW() - INTERVAL '24 hours'",
+      "generated_sql": "SELECT * FROM endpoint_events WHERE severity = 'critical' AND timestamp >= NOW() - INTERVAL '24 hours' ORDER BY timestamp DESC",
+      "agent_explanation": "This query retrieves all endpoint security events with critical severity that occurred within the last 24 hours. It filters by the 'critical' severity level and uses a timestamp comparison to limit results to events from the past 24 hours. Results are ordered by timestamp in descending order to show the most recent events first.",
+      "agent_reasoning_steps": [
+        "Identified 'endpoint_events' as the primary table based on question asking for 'endpoint events'",
+        "Applied severity filter WHERE severity = 'critical' to match 'critical severity' requirement",
+        "Used timestamp filter with NOW() - INTERVAL '24 hours' to capture events from 'last 24 hours'",
+        "Added ORDER BY timestamp DESC to show most recent events first, which is typical for security event queries",
+        "Selected all columns (*) since question asks to 'show me all' without specifying particular fields"
+      ],
+      "correctness_score": 0.9,
+      "correctness_reasoning": "The generated SQL is semantically equivalent to the reference SQL and correctly answers the question. It selects all columns from endpoint_events, filters for critical severity, and restricts to events from the last 24 hours. The only difference is the addition of 'ORDER BY timestamp DESC', which sorts results by most recent first. This is a reasonable enhancement that doesn't change the correctness of the answer - it still returns all the requested critical events from the last 24 hours. The ordering is a minor cosmetic improvement that many would consider best practice for time-based queries, making results more useful without altering the core logic or data returned.",
+      "correctness_issues": [],
+      "latency_ms": 8585.426092147827,
+      "total_tokens": 130,
+      "retrieval_precision": 1.0,
+      "retrieved_tables": [
+        "endpoint_events"
+      ],
+      "reference_tables": [
+        "endpoint_events"
+      ],
+      "complexity": "simple",
+      "category": "endpoint",
+      "confidence": 0.95
+    },
+    {
+      "agent": "keyword",
+      "test_case_id": "test_sim_002",
+      "question": "Find all blocked firewall events",
+      "reference_sql": "SELECT * FROM firewall_events WHERE action = 'deny'",
+      "generated_sql": "SELECT * FROM network_traffic WHERE action = 'blocked'",
+      "agent_explanation": "This query retrieves all firewall events where traffic was blocked. The network_traffic table contains firewall/network flow data with an 'action' field that indicates whether traffic was allowed, blocked, or dropped. Filtering for action = 'blocked' returns all blocked firewall events.",
+      "agent_reasoning_steps": [
+        "Identified that 'firewall events' correspond to network traffic flows in the network_traffic table",
+        "The 'action' field in network_traffic contains values like 'allowed', 'blocked', 'dropped' which represent firewall decisions",
+        "Filtered for action = 'blocked' to match the user's request for blocked events",
+        "Used SELECT * to return all fields since the question asks for 'all blocked firewall events' without specifying particular fields",
+        "High confidence because the mapping is straightforward: firewall blocking events = network_traffic records with action='blocked'"
+      ],
+      "correctness_score": 0.2,
+      "correctness_reasoning": "The generated SQL query has fundamental errors that make it unable to answer the question correctly. While it attempts to filter for blocked events, it queries the wrong table ('network_traffic' instead of 'firewall_events') and uses an incorrect filter value ('blocked' instead of 'deny'). The question specifically asks for 'blocked firewall events', and the reference clearly indicates these are stored in the 'firewall_events' table with action = 'deny'. Querying a different table entirely means the query will return completely different data, if any. The intent is somewhat related (filtering network-related events by action), but the implementation is fundamentally incorrect.",
+      "correctness_issues": [
+        "Queries wrong table: 'network_traffic' instead of 'firewall_events'",
+        "Uses incorrect action value: 'blocked' instead of 'deny'",
+        "Will not return firewall events at all, making it unable to answer the question"
+      ],
+      "latency_ms": 8933.166980743408,
+      "total_tokens": 92,
+      "retrieval_precision": 0.0,
+      "retrieved_tables": [
+        "network_traffic"
+      ],
+      "reference_tables": [
+        "firewall_events"
+      ],
+      "complexity": "simple",
+      "category": "network",
+      "confidence": 0.95
+    },
+    {
+      "agent": "keyword",
+      "test_case_id": "test_sim_003",
+      "question": "What authentication failures happened today",
+      "reference_sql": "SELECT * FROM authentication_events WHERE status = 'failure' AND timestamp >= CURRENT_DATE",
+      "generated_sql": "SELECT event_id, timestamp, user_name, source_ip, failure_reason, authentication_method, application, logon_type FROM authentication_events WHERE status = 'failure' AND timestamp >= CURRENT_DATE ORDER BY timestamp DESC",
+      "agent_explanation": "This query retrieves all authentication failures that occurred today by filtering for records where status equals 'failure' and the timestamp is on or after the current date (midnight today). The results are ordered by timestamp in descending order to show the most recent failures first. Key fields returned include the event ID, timestamp, username, source IP, reason for failure, authentication method, application accessed, and logon type.",
+      "agent_reasoning_steps": [
+        "Identified that 'authentication failures' maps to the authentication_events table with status = 'failure'",
+        "Determined 'today' requires filtering on timestamp >= CURRENT_DATE to get all records from midnight today onward",
+        "Selected relevant fields that provide context about the authentication failures (who, when, where, why, how)",
+        "Added ORDER BY timestamp DESC to show most recent failures first, which is typically most useful for security analysis",
+        "High confidence because the question is clear and maps directly to available table structure"
+      ],
+      "correctness_score": 0.9,
+      "correctness_reasoning": "The generated SQL correctly answers the question and is semantically equivalent to the reference query. It queries the correct table (authentication_events), uses the correct WHERE conditions (status = 'failure' AND timestamp >= CURRENT_DATE), and retrieves authentication failures from today. The differences are cosmetic enhancements rather than errors: (1) it explicitly lists columns instead of using SELECT *, which is often considered better practice, and (2) it adds ORDER BY timestamp DESC for logical result ordering. These additions improve the query without changing its correctness or core logic. The explicit column selection and ordering are reasonable interpretations of what a user might want when asking about 'authentication failures that happened today'.",
+      "correctness_issues": [],
+      "latency_ms": 9712.72087097168,
+      "total_tokens": 175,
+      "retrieval_precision": 1.0,
+      "retrieved_tables": [
+        "authentication_events"
+      ],
+      "reference_tables": [
+        "authentication_events"
+      ],
+      "complexity": "simple",
+      "category": "authentication",
+      "confidence": 0.95
+    },
+    {
+      "agent": "keyword",
+      "test_case_id": "test_sim_004",
+      "question": "Show me all phishing emails detected this week",
+      "reference_sql": "SELECT * FROM email_events WHERE threat_detected = true AND threat_type = 'phishing' AND timestamp >= CURRENT_DATE - INTERVAL '7 days'",
+      "generated_sql": "SELECT message_id, timestamp, sender_email, sender_domain, recipient_emails, subject, attachment_count, attachment_names, url_count, action_taken FROM email_events WHERE threat_type = 'phishing' AND timestamp >= NOW() - INTERVAL '7 days' ORDER BY timestamp DESC",
+      "agent_explanation": "This query retrieves all phishing emails detected in the last 7 days from the email_events table. It filters for records where threat_type is 'phishing' and the timestamp is within the current week (last 7 days). The results are ordered by timestamp in descending order to show the most recent detections first. Key fields include message ID, timestamp, sender information, recipients, subject line, attachment details, URL count, and the action taken (delivered, quarantined, or blocked).",
+      "agent_reasoning_steps": [
+        "Identified 'phishing emails' maps to email_events table with threat_type field",
+        "Interpreted 'this week' as the last 7 days using INTERVAL '7 days' for practical security monitoring",
+        "Selected relevant fields that security analysts typically need: identifiers, sender/recipient info, subject, and threat indicators",
+        "Added ORDER BY timestamp DESC to show most recent phishing attempts first",
+        "Used WHERE clause combining threat_type filter and time-based filter for efficient query execution"
+      ],
+      "correctness_score": 0.85,
+      "correctness_reasoning": "The generated SQL correctly identifies phishing emails from the past week using the right table, threat_type filter, and time interval. However, it has two notable differences from the reference: (1) it explicitly selects specific columns instead of using SELECT *, which is actually better practice but diverges from the reference, and (2) it's missing the 'threat_detected = true' condition, which could potentially include false positives if phishing emails exist in the database where threat_detected is false or null. The addition of ORDER BY timestamp DESC is a reasonable enhancement for displaying recent threats first. The use of NOW() instead of CURRENT_DATE is functionally equivalent for this time-based filter.",
+      "correctness_issues": [
+        "Missing 'threat_detected = true' condition which could include unconfirmed or false positive phishing records",
+        "Uses explicit column selection instead of SELECT * (minor deviation from reference, though arguably better practice)"
+      ],
+      "latency_ms": 10368.81399154663,
+      "total_tokens": 198,
+      "retrieval_precision": 1.0,
+      "retrieved_tables": [
+        "email_events"
+      ],
+      "reference_tables": [
+        "email_events"
+      ],
+      "complexity": "simple",
+      "category": "email",
+      "confidence": 0.95
+    },
+    {
+      "agent": "keyword",
+      "test_case_id": "test_sim_005",
+      "question": "List all high severity security alerts that are still open",
+      "reference_sql": "SELECT * FROM security_alerts WHERE severity = 'high' AND status = 'open'",
+      "generated_sql": "SELECT alert_id, timestamp, alert_name, alert_type, severity, priority, source_system, confidence_score, affected_assets, affected_users, assigned_to FROM security_alerts WHERE severity = 'high' AND status NOT IN ('resolved', 'false_positive') ORDER BY timestamp DESC",
+      "agent_explanation": "This query retrieves all high severity security alerts that are still open (not resolved or marked as false positive). It selects key alert information including identifiers, timing, categorization, affected resources, and assignment details. The results are ordered by timestamp in descending order to show the most recent alerts first.",
+      "agent_reasoning_steps": [
+        "Identified 'high severity' maps to severity = 'high' in the security_alerts table",
+        "Interpreted 'still open' as alerts not in 'resolved' or 'false_positive' status (excluding closed states)",
+        "The status field has values: new, investigating, resolved, false_positive - so open alerts are those NOT resolved or false_positive",
+        "Selected relevant fields for security alert review including identification, classification, and triage information",
+        "Added ORDER BY timestamp DESC to show most recent alerts first, which is typical for operational security queries",
+        "High confidence because the question directly maps to clear table fields with minimal ambiguity"
+      ],
+      "correctness_score": 0.85,
+      "correctness_reasoning": "The generated SQL correctly identifies the right table (security_alerts) and applies the correct severity filter (severity = 'high'). However, there's a semantic difference in how 'open' status is interpreted. The reference uses an exact match (status = 'open'), while the generated query uses exclusion logic (status NOT IN ('resolved', 'false_positive')). This could include additional statuses like 'investigating', 'pending', 'acknowledged', etc., which may or may not be considered 'open' depending on the data model. The generated query also adds ORDER BY timestamp DESC, which is a reasonable enhancement for viewing recent alerts first, and explicitly selects specific columns rather than using SELECT *. These are minor improvements rather than issues. The core concern is whether the status filtering is semantically equivalent - if 'open' is the only status besides 'resolved' and 'false_positive', they're equivalent; otherwise, the generated query may return more rows than intended.",
+      "correctness_issues": [
+        "Status filtering uses exclusion logic (NOT IN) instead of exact match (status = 'open'), which may include unintended intermediate statuses like 'investigating', 'pending', or 'acknowledged' if they exist in the database"
+      ],
+      "latency_ms": 9588.333129882812,
+      "total_tokens": 164,
+      "retrieval_precision": 1.0,
+      "retrieved_tables": [
+        "security_alerts"
+      ],
+      "reference_tables": [
+        "security_alerts"
+      ],
+      "complexity": "simple",
+      "category": "security_ops",
+      "confidence": 0.95
+    },
+    {
+      "agent": "keyword",
+      "test_case_id": "test_sim_006",
+      "question": "Find all DLP violations involving credit card data",
+      "reference_sql": "SELECT * FROM dlp_events WHERE data_type = 'credit_card' OR content_matches LIKE '%credit card%'",
+      "generated_sql": "SELECT event_id, timestamp, user_name, source_hostname, source_ip, policy_name, severity, channel, action_taken, file_name, destination, matches_count, match_details FROM dlp_events WHERE data_type = 'PCI' ORDER BY timestamp DESC",
+      "agent_explanation": "This query retrieves all Data Loss Prevention violations involving credit card data by filtering on the data_type field for 'PCI' (Payment Card Industry data, which includes credit card information). The results are ordered by timestamp in descending order to show the most recent violations first. The query returns key information including the event details, user involved, policy triggered, severity level, the channel through which the violation occurred, action taken by the DLP system, and match details.",
+      "agent_reasoning_steps": [
+        "Identified that DLP violations are stored in the dlp_events table",
+        "Determined that credit card data is classified as 'PCI' in the data_type field based on the field description which lists 'PCI' as one of the sensitive data types",
+        "Selected relevant fields that provide comprehensive information about the violation including user, location, policy, severity, and action taken",
+        "Added ORDER BY timestamp DESC to show most recent violations first, which is typically the most useful ordering for security investigations",
+        "High confidence because the question directly maps to a single table with a clear field (data_type = 'PCI') for credit card data"
+      ],
+      "correctness_score": 0.3,
+      "correctness_reasoning": "The generated query has significant correctness issues when compared to the reference. While it correctly queries the dlp_events table, it fails to properly identify credit card violations. The reference uses two conditions: data_type = 'credit_card' OR content_matches LIKE '%credit card%' to capture credit card-related events. The generated query filters by data_type = 'PCI', which may be related to payment card industry standards but is not semantically equivalent to 'credit_card'. This is a different filter value that would return a different result set. Additionally, the generated query explicitly lists columns instead of using SELECT *, which is acceptable but doesn't compensate for the incorrect filtering logic. The ORDER BY timestamp DESC is an added feature not in the reference, which doesn't make the query wrong but isn't required. The fundamental issue is that the WHERE clause doesn't match the intent - it misses the content_matches LIKE condition entirely and uses a different data_type value.",
+      "correctness_issues": [
+        "Wrong data_type filter value: uses 'PCI' instead of 'credit_card'",
+        "Missing OR condition with content_matches LIKE '%credit card%'",
+        "Would return different results than reference query - may miss actual credit card violations"
+      ],
+      "latency_ms": 9454.9880027771,
+      "total_tokens": 197,
+      "retrieval_precision": 1.0,
+      "retrieved_tables": [
+        "dlp_events"
+      ],
+      "reference_tables": [
+        "dlp_events"
+      ],
+      "complexity": "simple",
+      "category": "dlp",
+      "confidence": 0.95
+    },
+    {
+      "agent": "keyword",
+      "test_case_id": "test_sim_007",
+      "question": "Show me processes executed by SYSTEM account",
+      "reference_sql": "SELECT * FROM process_execution WHERE user_name = 'SYSTEM'",
+      "generated_sql": "SELECT event_id, timestamp, hostname, process_name, process_path, command_line, parent_process_name, parent_process_id, integrity_level, current_directory FROM process_execution WHERE user_name = 'SYSTEM' ORDER BY timestamp DESC",
+      "agent_explanation": "This query retrieves all processes executed by the SYSTEM account from the process_execution table. It returns key process details including the event ID, timestamp, hostname, process name and path, command line arguments, parent process information, integrity level, and working directory. Results are ordered by timestamp in descending order to show the most recent executions first.",
+      "agent_reasoning_steps": [
+        "Identified that 'processes executed' maps to the process_execution table which contains detailed process execution telemetry",
+        "The 'SYSTEM account' refers to the built-in Windows SYSTEM account, which would be stored in the user_name field",
+        "Selected relevant fields that provide comprehensive process execution details",
+        "Added ORDER BY timestamp DESC to show most recent SYSTEM processes first, which is typically useful for security investigations",
+        "High confidence as the question is straightforward and the process_execution table has a direct user_name field that matches the SYSTEM account requirement"
+      ],
+      "correctness_score": 0.9,
+      "correctness_reasoning": "The generated SQL is semantically correct and fully answers the question. It queries the correct table (process_execution), uses the correct WHERE clause (user_name = 'SYSTEM'), and retrieves process execution data as required. The main differences are: (1) it explicitly lists specific columns instead of using SELECT *, and (2) it adds ORDER BY timestamp DESC. The explicit column selection is actually a best practice in production SQL, and the ordering provides useful chronological context. These are cosmetic enhancements rather than errors. The query will return the same logical data as the reference, just formatted differently and ordered.",
+      "correctness_issues": [
+        "Uses explicit column list instead of SELECT * (minor style difference, not an error)",
+        "Adds ORDER BY timestamp DESC which wasn't in reference (enhancement, not required by question)"
+      ],
+      "latency_ms": 8741.950988769531,
+      "total_tokens": 164,
+      "retrieval_precision": 1.0,
+      "retrieved_tables": [
+        "process_execution"
+      ],
+      "reference_tables": [
+        "process_execution"
+      ],
+      "complexity": "simple",
+      "category": "endpoint",
+      "confidence": 0.95
+    },
+    {
+      "agent": "keyword",
+      "test_case_id": "test_sim_008",
+      "question": "What critical vulnerabilities were found on production servers",
+      "reference_sql": "SELECT * FROM vulnerability_scans WHERE severity = 'critical' AND hostname LIKE '%prod%'",
+      "generated_sql": "SELECT vs.vulnerability_id, vs.vulnerability_name, vs.hostname, vs.ip_address, vs.cvss_score, vs.description, vs.solution, vs.exploitable, vs.patch_available, vs.status, vs.timestamp FROM vulnerability_scans vs INNER JOIN asset_inventory ai ON vs.hostname = ai.hostname WHERE vs.severity = 'critical' AND ai.tags LIKE '%production%' AND vs.false_positive = false ORDER BY vs.cvss_score DESC, vs.timestamp DESC",
+      "agent_explanation": "This query identifies critical vulnerabilities discovered on production servers by joining the vulnerability_scans table with the asset_inventory table. It filters for vulnerabilities marked as 'critical' severity on assets tagged as 'production' environments, excluding false positives. Results are ordered by CVSS score (highest first) and then by timestamp (most recent first) to prioritize the most severe and recent vulnerabilities.",
+      "agent_reasoning_steps": [
+        "Identified that vulnerability data comes from the vulnerability_scans table",
+        "Determined that server environment classification (production) is stored in asset_inventory tags",
+        "Used INNER JOIN between vulnerability_scans and asset_inventory on hostname to correlate vulnerabilities with asset environment",
+        "Filtered for severity='critical' to match the user's requirement",
+        "Used LIKE '%production%' on tags field to identify production servers (assuming tags is stored as JSON array or comma-separated string)",
+        "Excluded false positives with false_positive=false to ensure accuracy",
+        "Selected relevant fields including CVE ID, vulnerability name, affected host details, CVSS score, and remediation information",
+        "Ordered by CVSS score descending to show most severe vulnerabilities first, then by timestamp for recency"
+      ],
+      "correctness_score": 0.85,
+      "correctness_reasoning": "The generated SQL correctly identifies critical vulnerabilities on production servers, with enhanced logic and specificity. Core elements are correct: it filters for severity='critical' and identifies production servers. The generated query uses a more robust approach by joining with asset_inventory and checking a structured 'production' tag (ai.tags LIKE '%production%') rather than just pattern-matching hostnames. It also adds valuable filters (false_positive=false) and ordering (by CVSS score and timestamp) that make it more production-ready. However, it differs from the reference in three ways: (1) it joins with asset_inventory table which isn't in the reference, (2) it uses a tags-based approach vs hostname pattern matching, and (3) it explicitly selects columns instead of SELECT *. While these changes represent improvements in real-world scenarios, they deviate from the reference's simpler approach. The core logic is sound and arguably better, but the additional complexity and different table structure means it's not semantically equivalent to the reference.",
+      "correctness_issues": [
+        "Uses INNER JOIN with asset_inventory table not present in reference query",
+        "Identifies production servers via ai.tags LIKE '%production%' instead of hostname LIKE '%prod%' - different column and table",
+        "Explicitly selects specific columns instead of SELECT * as in reference",
+        "Adds additional filter (false_positive = false) not in reference",
+        "Includes ORDER BY clause not present in reference"
+      ],
+      "latency_ms": 11234.982013702393,
+      "total_tokens": 226,
+      "retrieval_precision": 0.5,
+      "retrieved_tables": [
+        "vulnerability_scans",
+        "asset_inventory"
+      ],
+      "reference_tables": [
+        "vulnerability_scans"
+      ],
+      "complexity": "simple",
+      "category": "vulnerability",
+      "confidence": 0.85
+    },
+    {
+      "agent": "keyword",
+      "test_case_id": "test_sim_009",
+      "question": "Find all AWS console login events",
+      "reference_sql": "SELECT * FROM cloud_audit_logs WHERE cloud_provider = 'aws' AND service = 'signin' AND action = 'ConsoleLogin'",
+      "generated_sql": "SELECT event_id, timestamp, user_name, source_ip, user_agent, mfa_authenticated, action_result, request_parameters FROM cloud_audit_logs WHERE cloud_provider = 'AWS' AND event_name = 'ConsoleLogin' ORDER BY timestamp DESC",
+      "agent_explanation": "This query retrieves all AWS console login events from the cloud_audit_logs table. It filters for AWS as the cloud provider and specifically looks for 'ConsoleLogin' event names, which represent console authentication attempts. The results are ordered by timestamp in descending order to show the most recent logins first. Key fields include the event ID, timestamp, username, source IP, user agent, MFA status, and whether the login succeeded or failed.",
+      "agent_reasoning_steps": [
+        "Identified that AWS console logins are cloud audit events",
+        "Selected cloud_audit_logs table as it contains cloud provider authentication events",
+        "Determined that event_name = 'ConsoleLogin' is the standard AWS CloudTrail event for console logins",
+        "Added cloud_provider = 'AWS' filter to ensure only AWS events are returned",
+        "Included relevant fields: timestamp, user identity, source IP, MFA status, and result",
+        "Ordered by timestamp DESC to show most recent events first",
+        "High confidence due to clear question and standard AWS event naming convention"
+      ],
+      "correctness_score": 0.7,
+      "correctness_reasoning": "The generated SQL has the correct core concept (filtering AWS console logins from cloud_audit_logs) but contains several significant differences from the reference. It correctly identifies the table and cloud provider (though with different casing 'AWS' vs 'aws', which is typically case-insensitive in SQL string comparisons). However, it uses 'event_name = ConsoleLogin' instead of the reference's two-part filter 'service = signin AND action = ConsoleLogin'. This may or may not retrieve the same events depending on the data model. The generated query selects specific columns rather than SELECT *, which is actually better practice but deviates from the reference. It also adds ORDER BY timestamp DESC, which improves usability but wasn't in the reference. The main concern is whether 'event_name = ConsoleLogin' is semantically equivalent to 'service = signin AND action = ConsoleLogin' - this depends on how the schema is structured. If event_name is a composite field that combines service and action, it could be correct; if not, it's missing the service filter.",
+      "correctness_issues": [
+        "Uses 'event_name = ConsoleLogin' instead of 'service = signin AND action = ConsoleLogin' - may not capture the same events depending on schema",
+        "Selects specific columns instead of SELECT * - not an error but deviates from reference",
+        "Adds ORDER BY timestamp DESC - not requested in reference but not incorrect",
+        "Case difference in 'AWS' vs 'aws' - typically not an issue but shows minor inconsistency"
+      ],
+      "latency_ms": 9193.530082702637,
+      "total_tokens": 176,
+      "retrieval_precision": 1.0,
+      "retrieved_tables": [
+        "cloud_audit_logs"
+      ],
+      "reference_tables": [
+        "cloud_audit_logs"
+      ],
+      "complexity": "simple",
+      "category": "cloud",
+      "confidence": 0.95
+    },
+    {
+      "agent": "keyword",
+      "test_case_id": "test_sim_010",
+      "question": "Show me all SQL injection attacks detected by the WAF",
+      "reference_sql": "SELECT * FROM waf_events WHERE attack_type = 'sql_injection'",
+      "generated_sql": "SELECT event_id, timestamp, source_ip, destination_ip, method, uri, query_string, user_agent, rule_id, rule_message, action, severity, payload, country FROM waf_events WHERE attack_type = 'SQLi' ORDER BY timestamp DESC",
+      "agent_explanation": "This query retrieves all SQL injection attacks detected by the Web Application Firewall. It filters the waf_events table for records where the attack_type is 'SQLi' (SQL injection) and orders the results by timestamp in descending order to show the most recent attacks first. The query returns key details including when the attack occurred, the source IP, the targeted URI, the specific WAF rule that was triggered, the action taken (blocked/allowed), severity, and the malicious payload.",
+      "agent_reasoning_steps": [
+        "Identified that the question asks for SQL injection attacks from the WAF",
+        "Located the waf_events table which contains Web Application Firewall events",
+        "Found the attack_type field which categorizes attack types including 'SQLi' for SQL injection",
+        "Selected relevant fields that provide comprehensive information about the attacks",
+        "Added ORDER BY timestamp DESC to show most recent attacks first",
+        "High confidence because the question directly maps to a specific table and field with clear attack type categorization"
+      ],
+      "correctness_score": 0.7,
+      "correctness_reasoning": "The generated query demonstrates a correct understanding of the task and queries the right table (waf_events) with appropriate filtering on the attack_type column. However, there is one significant issue: the filter value is 'SQLi' instead of 'sql_injection' as specified in the reference query. This discrepancy could result in returning zero rows if the database uses 'sql_injection' as the canonical value for SQL injection attacks. The explicit column selection (instead of SELECT *) is actually a best practice and not a negative. The ORDER BY timestamp DESC clause adds useful sorting that wasn't required but is reasonable for security event analysis. If 'SQLi' and 'sql_injection' are equivalent values in this database schema (e.g., through normalization or if both exist), the query would be nearly perfect. However, assuming the reference query reflects the actual data model, this value mismatch is a significant issue that would likely cause the query to fail or return incorrect results.",
+      "correctness_issues": [
+        "Filter value uses 'SQLi' instead of 'sql_injection' - this mismatch could cause the query to return no results or wrong results if the database stores the attack type as 'sql_injection'"
+      ],
+      "latency_ms": 9169.986009597778,
+      "total_tokens": 189,
+      "retrieval_precision": 1.0,
+      "retrieved_tables": [
+        "waf_events"
+      ],
+      "reference_tables": [
+        "waf_events"
+      ],
+      "complexity": "simple",
+      "category": "application",
+      "confidence": 0.95
+    },
+    {
+      "agent": "keyword",
+      "test_case_id": "test_med_001",
+      "question": "Show me all blocked outbound connections in the last 24 hours, sorted by source IP",
+      "reference_sql": "SELECT * FROM firewall_events WHERE action = 'deny' AND direction = 'outbound' AND timestamp >= NOW() - INTERVAL '24 hours' ORDER BY source_ip",
+      "generated_sql": "SELECT flow_id, timestamp, source_ip, source_port, destination_ip, destination_port, protocol, application, threat_detected, threat_name FROM network_traffic WHERE action = 'blocked' AND direction = 'outbound' AND timestamp >= NOW() - INTERVAL '24 hours' ORDER BY source_ip, timestamp DESC",
+      "agent_explanation": "This query retrieves all blocked outbound network connections from the last 24 hours. It filters for connections where the action was 'blocked' and the direction was 'outbound', limiting results to the past 24 hours. Results are sorted by source IP address (alphabetically) and then by timestamp (most recent first within each source IP group).",
+      "agent_reasoning_steps": [
+        "Identified 'network_traffic' table as the primary source since it contains connection data with action and direction fields",
+        "Filtered for action='blocked' to find blocked connections",
+        "Filtered for direction='outbound' to match the outbound requirement",
+        "Used timestamp >= NOW() - INTERVAL '24 hours' for the 24-hour time window",
+        "Selected relevant fields including flow_id, timestamp, source/destination IPs and ports, protocol, application, and threat information",
+        "Applied ORDER BY source_ip to sort by source IP as requested, with secondary sort by timestamp DESC to show most recent events first for each IP"
+      ],
+      "correctness_score": 0.2,
+      "correctness_reasoning": "The generated SQL query has critical fundamental errors that prevent it from correctly answering the question. While it attempts to filter for outbound connections in the last 24 hours and sorts by source_ip, it fails on multiple essential criteria: (1) It queries the wrong table ('network_traffic' instead of 'firewall_events'), (2) It uses the wrong action filter value ('blocked' instead of 'deny'), and (3) It selects specific columns rather than all columns as requested by 'SELECT *'. The query also adds an unnecessary secondary sort by timestamp DESC that wasn't requested. The table name difference is particularly significant as 'network_traffic' and 'firewall_events' likely contain different schemas and data types - firewall events specifically track allow/deny decisions while network traffic may track flow data. The combination of wrong table and wrong action value means this query would return completely different data than intended, if it runs at all.",
+      "correctness_issues": [
+        "Queries wrong table: 'network_traffic' instead of 'firewall_events'",
+        "Uses wrong action value: 'blocked' instead of 'deny'",
+        "Selects specific columns instead of 'SELECT *' as in reference",
+        "Adds unnecessary secondary sort 'timestamp DESC' not present in reference or question"
+      ],
+      "latency_ms": 9265.042304992676,
+      "total_tokens": 178,
+      "retrieval_precision": 0.0,
+      "retrieved_tables": [
+        "network_traffic"
+      ],
+      "reference_tables": [
+        "firewall_events"
+      ],
+      "complexity": "medium",
+      "category": "network",
+      "confidence": 0.95
+    },
+    {
+      "agent": "keyword",
+      "test_case_id": "test_med_002",
+      "question": "Which hostnames had the most high-severity endpoint events this week?",
+      "reference_sql": "SELECT hostname, COUNT(*) as event_count FROM endpoint_events WHERE severity IN ('high', 'critical') AND timestamp >= DATE_TRUNC('week', NOW()) GROUP BY hostname ORDER BY event_count DESC",
+      "generated_sql": "SELECT hostname, COUNT(*) as high_severity_event_count FROM endpoint_events WHERE severity = 'high' AND timestamp >= NOW() - INTERVAL '7 days' GROUP BY hostname ORDER BY high_severity_event_count DESC",
+      "agent_explanation": "This query counts high-severity endpoint events per hostname for the past 7 days. It filters for severity='high', restricts to events within the current week using a 7-day interval, groups results by hostname, and orders by count in descending order to show hostnames with the most events first.",
+      "agent_reasoning_steps": [
+        "Identified 'endpoint_events' as the primary table based on question about endpoint events",
+        "Determined 'high-severity' maps to WHERE severity = 'high'",
+        "Interpreted 'this week' as the last 7 days using timestamp >= NOW() - INTERVAL '7 days'",
+        "Used GROUP BY hostname and COUNT(*) to aggregate events per host",
+        "Applied ORDER BY COUNT(*) DESC to rank hostnames by event count",
+        "High confidence due to clear question with direct field mappings"
+      ],
+      "correctness_score": 0.7,
+      "correctness_reasoning": "The generated SQL is mostly correct and uses the right approach with proper table selection, grouping, and ordering. However, there are two significant issues: (1) It only filters for 'high' severity events but excludes 'critical' severity events, which the reference includes via 'IN ('high', 'critical')'. This is a semantic difference that could miss important critical events. (2) It uses 'NOW() - INTERVAL 7 days' instead of 'DATE_TRUNC('week', NOW())', which defines 'this week' differently - the generated query looks back exactly 7 days from the current moment, while the reference uses calendar week boundaries (typically Monday 00:00:00). These are significant logical differences that could produce different results, though the overall structure and intent are correct.",
+      "correctness_issues": [
+        "Missing 'critical' severity in the filter - only checks severity = 'high' instead of severity IN ('high', 'critical')",
+        "Uses rolling 7-day window (NOW() - INTERVAL '7 days') instead of calendar week boundaries (DATE_TRUNC('week', NOW())), which may return different time ranges"
+      ],
+      "latency_ms": 8304.293870925903,
+      "total_tokens": 141,
+      "retrieval_precision": 1.0,
+      "retrieved_tables": [
+        "endpoint_events"
+      ],
+      "reference_tables": [
+        "endpoint_events"
+      ],
+      "complexity": "medium",
+      "category": "endpoint",
+      "confidence": 0.95
+    },
+    {
+      "agent": "keyword",
+      "test_case_id": "test_med_003",
+      "question": "List all failed SSH authentication attempts grouped by username with counts",
+      "reference_sql": "SELECT user_name, COUNT(*) as failed_attempts FROM authentication_events WHERE event_type = 'ssh' AND status = 'failure' GROUP BY user_name ORDER BY failed_attempts DESC",
+      "generated_sql": "SELECT user_name, COUNT(*) as failed_attempts FROM authentication_events WHERE status = 'failure' AND protocol = 'SSH' GROUP BY user_name ORDER BY failed_attempts DESC",
+      "agent_explanation": "This query retrieves all failed SSH authentication attempts from the authentication_events table, groups them by username, and counts the number of failures for each user. The results are ordered by the count in descending order to show users with the most failed attempts first. The query filters for records where the status is 'failure' and the protocol is 'SSH'.",
+      "agent_reasoning_steps": [
+        "Identified that authentication_events table contains all authentication data including SSH attempts",
+        "Used status = 'failure' to filter for failed authentication attempts",
+        "Used protocol = 'SSH' to specifically target SSH authentication events",
+        "Applied GROUP BY user_name to aggregate results by username",
+        "Used COUNT(*) to count the number of failed attempts per user",
+        "Added ORDER BY failed_attempts DESC to show users with most failures first"
+      ],
+      "correctness_score": 0.7,
+      "correctness_reasoning": "The generated SQL has the correct overall structure and logic: it queries the right table (authentication_events), groups by user_name, counts failed attempts, and orders by count descending. However, there is one significant issue with the filtering conditions. The reference SQL filters using 'event_type = ssh' while the generated SQL uses 'protocol = SSH'. This represents a column name mismatch - the generated query references a 'protocol' column that may not exist in the schema, while the correct column appears to be 'event_type'. Additionally, the generated SQL uses 'SSH' (uppercase) instead of 'ssh' (lowercase), which could cause a match failure depending on database collation settings. The status filter is correctly applied in both queries. This is more than a cosmetic difference as it involves querying a potentially non-existent column, which would likely cause the query to fail or return incorrect results.",
+      "correctness_issues": [
+        "Uses 'protocol' column instead of 'event_type' - this column name mismatch may cause query failure",
+        "Uses 'SSH' (uppercase) instead of 'ssh' (lowercase) which may affect string matching depending on case sensitivity"
+      ],
+      "latency_ms": 8257.925987243652,
+      "total_tokens": 151,
+      "retrieval_precision": 1.0,
+      "retrieved_tables": [
+        "authentication_events"
+      ],
+      "reference_tables": [
+        "authentication_events"
+      ],
+      "complexity": "medium",
+      "category": "authentication",
+      "confidence": 0.95
+    },
+    {
+      "agent": "keyword",
+      "test_case_id": "test_med_004",
+      "question": "What are the top 10 most queried domains in the last hour?",
+      "reference_sql": "SELECT queried_domain, COUNT(*) as query_count FROM dns_queries WHERE timestamp >= NOW() - INTERVAL '1 hour' GROUP BY queried_domain ORDER BY query_count DESC LIMIT 10",
+      "generated_sql": "SELECT query_name, COUNT(*) as query_count FROM dns_queries WHERE timestamp >= NOW() - INTERVAL '1 hour' GROUP BY query_name ORDER BY query_count DESC LIMIT 10",
+      "agent_explanation": "This query retrieves the top 10 most frequently queried domain names from the dns_queries table within the last hour. It filters records to only include queries from the past 60 minutes, groups them by domain name (query_name), counts the occurrences of each domain, and orders the results by count in descending order, limiting the output to the top 10 results.",
+      "agent_reasoning_steps": [
+        "Identified that 'queried domains' refers to the query_name field in dns_queries table",
+        "Determined time filter needed: 'last hour' translates to timestamp >= NOW() - INTERVAL '1 hour'",
+        "Recognized need for aggregation: COUNT(*) grouped by query_name to find most frequent domains",
+        "Applied ORDER BY query_count DESC to get highest counts first",
+        "Added LIMIT 10 to restrict results to top 10 as requested",
+        "High confidence due to clear question mapping directly to available schema"
+      ],
+      "correctness_score": 0.0,
+      "correctness_reasoning": "The generated SQL query uses the wrong column name 'query_name' instead of 'queried_domain'. This is a critical error because it selects and groups by an entirely different column than what the question asks for. While the overall structure (time filtering, aggregation, ordering, and limiting) is correct, querying the wrong column means this query will not answer the question 'What are the top 10 most queried domains in the last hour?' at all. It would return results for a different column that may not even exist in the table, or if it does exist, would provide completely irrelevant data. This is not a minor syntactic difference but a fundamental semantic error that makes the query incorrect for the given question.",
+      "correctness_issues": [
+        "Uses wrong column 'query_name' instead of 'queried_domain' for SELECT",
+        "Uses wrong column 'query_name' instead of 'queried_domain' for GROUP BY",
+        "The query will return data for the wrong field, failing to answer the question about domains"
+      ],
+      "latency_ms": 8110.288858413696,
+      "total_tokens": 144,
+      "retrieval_precision": 1.0,
+      "retrieved_tables": [
+        "dns_queries"
+      ],
+      "reference_tables": [
+        "dns_queries"
+      ],
+      "complexity": "medium",
+      "category": "network",
+      "confidence": 0.95
+    },
+    {
+      "agent": "keyword",
+      "test_case_id": "test_med_005",
+      "question": "Show me all critical vulnerability findings discovered in the last 7 days by severity",
+      "reference_sql": "SELECT hostname, cve_id, cvss_score, vulnerability_name FROM vulnerability_scans WHERE severity = 'critical' AND timestamp >= NOW() - INTERVAL '7 days' ORDER BY cvss_score DESC",
+      "generated_sql": "SELECT scan_id, vulnerability_id, timestamp, hostname, ip_address, vulnerability_name, description, severity, cvss_score, exploitable, patch_available, status FROM vulnerability_scans WHERE severity = 'critical' AND timestamp >= NOW() - INTERVAL '7 days' ORDER BY timestamp DESC",
+      "agent_explanation": "This query retrieves all vulnerability findings with critical severity that were discovered within the last 7 days. It filters by severity='critical' and timestamp within the past week, ordering results by most recent discoveries first. The query returns key information including vulnerability identifiers, affected systems, severity metrics, and remediation status.",
+      "agent_reasoning_steps": [
+        "Identified that 'vulnerability findings' maps to the vulnerability_scans table",
+        "'Critical' severity requires filtering WHERE severity = 'critical'",
+        "'Last 7 days' requires timestamp filter: timestamp >= NOW() - INTERVAL '7 days'",
+        "'Discovered' aligns with the timestamp field which represents scan time",
+        "Ordered by timestamp DESC to show most recent findings first",
+        "Selected relevant fields including vulnerability details, affected assets, severity metrics, and remediation information",
+        "High confidence due to clear question mapping to single table with explicit field matches"
+      ],
+      "correctness_score": 0.85,
+      "correctness_reasoning": "The generated SQL correctly addresses the core requirements: it queries the right table (vulnerability_scans), applies the correct severity filter (severity = 'critical'), uses the proper time window (timestamp >= NOW() - INTERVAL '7 days'), and includes appropriate ordering. However, there are two notable differences from the reference: (1) it selects significantly more columns than needed (12 vs 4), including operational fields like scan_id, vulnerability_id, status, etc., and (2) it orders by timestamp DESC instead of cvss_score DESC. The question asks to 'show by severity' which is somewhat ambiguous, but since all results are already filtered to 'critical', ordering by cvss_score (as in the reference) provides more meaningful ranking within that severity level. The extra columns don't break functionality but add unnecessary data, and the different ordering changes the presentation priority from risk-based (CVSS score) to time-based.",
+      "correctness_issues": [
+        "Orders by timestamp DESC instead of cvss_score DESC - changes prioritization from risk-level to recency",
+        "Selects 12 columns instead of the 4 essential ones (hostname, cve_id, cvss_score, vulnerability_name) - includes operational fields that may not be needed for the use case",
+        "Missing cve_id column which is present in reference and typically important for vulnerability identification"
+      ],
+      "latency_ms": 9161.241292953491,
+      "total_tokens": 182,
+      "retrieval_precision": 1.0,
+      "retrieved_tables": [
+        "vulnerability_scans"
+      ],
+      "reference_tables": [
+        "vulnerability_scans"
+      ],
+      "complexity": "medium",
+      "category": "vulnerability",
+      "confidence": 0.95
+    },
+    {
+      "agent": "keyword",
+      "test_case_id": "test_med_006",
+      "question": "Which users accessed the most sensitive files this month according to DLP?",
+      "reference_sql": "SELECT user_name, COUNT(*) as access_count FROM dlp_events WHERE policy_name ILIKE '%sensitive%' AND timestamp >= DATE_TRUNC('month', NOW()) GROUP BY user_name ORDER BY access_count DESC",
+      "generated_sql": "SELECT user_name, COUNT(*) as access_count, COUNT(DISTINCT file_name) as unique_files, SUM(CASE WHEN severity IN ('high', 'critical') THEN 1 ELSE 0 END) as high_severity_events FROM dlp_events WHERE timestamp >= DATE_TRUNC('month', CURRENT_DATE) AND timestamp < DATE_TRUNC('month', CURRENT_DATE) + INTERVAL '1 month' AND data_type IN ('PII', 'PHI', 'PCI', 'IP') GROUP BY user_name ORDER BY access_count DESC LIMIT 10",
+      "agent_explanation": "This query identifies the top 10 users who accessed the most sensitive files this month according to DLP events. It counts total access events and unique files accessed, filtered to the current calendar month and sensitive data types (PII, PHI, PCI, IP). It also includes a count of high/critical severity events per user to provide additional context about the sensitivity of accesses.",
+      "agent_reasoning_steps": [
+        "Identified dlp_events as the primary table containing file access information with data sensitivity classifications",
+        "Interpreted 'this month' as the current calendar month using DATE_TRUNC for accurate month boundaries",
+        "Defined 'sensitive files' as those containing PII, PHI, PCI, or IP data types based on the data_type field",
+        "Used COUNT(*) to measure 'most accessed' as the primary ranking metric",
+        "Included COUNT(DISTINCT file_name) to show variety of sensitive files accessed",
+        "Added high/critical severity event count as an additional sensitivity indicator",
+        "Applied LIMIT 10 to return top users as 'most' implies a ranked list",
+        "Grouped by user_name and ordered by access_count descending for ranking"
+      ],
+      "correctness_score": 0.7,
+      "correctness_reasoning": "The generated SQL correctly identifies users with the most accesses this month and orders them appropriately, but it uses a fundamentally different approach to identify 'sensitive files' that may not align with the intended DLP policy logic. The reference query filters by policy_name containing 'sensitive', while the generated query filters by data_type categories (PII, PHI, PCI, IP). While both approaches could identify sensitive data, they represent different interpretations. The generated query adds useful context columns (unique_files, high_severity_events) which are enhancements rather than errors. The timestamp logic is more explicit but semantically equivalent. The LIMIT 10 restricts results which wasn't in the reference. The core issue is the sensitivity detection method: policy_name matching vs data_type filtering - these could yield significantly different results depending on how DLP policies are configured. If 'sensitive' policies map to these data types, it's correct; otherwise, it answers a different question.",
+      "correctness_issues": [
+        "Uses data_type filtering instead of policy_name ILIKE '%sensitive%' to identify sensitive files - different sensitivity detection logic",
+        "Adds LIMIT 10 which restricts results not present in reference",
+        "More verbose timestamp range logic (functionally equivalent but adds upper bound explicitly)",
+        "Adds extra columns (unique_files, high_severity_events) not requested - minor enhancement rather than error"
+      ],
+      "latency_ms": 10365.668058395386,
+      "total_tokens": 219,
+      "retrieval_precision": 1.0,
+      "retrieved_tables": [
+        "dlp_events"
+      ],
+      "reference_tables": [
+        "dlp_events"
+      ],
+      "complexity": "medium",
+      "category": "dlp",
+      "confidence": 0.85
+    },
+    {
+      "agent": "keyword",
+      "test_case_id": "test_med_007",
+      "question": "Show all cloud resource changes made by users in production environments today",
+      "reference_sql": "SELECT * FROM cloud_resource_changes WHERE user_name IS NOT NULL AND environment = 'production' AND timestamp >= DATE_TRUNC('day', NOW()) ORDER BY timestamp DESC",
+      "generated_sql": "SELECT change_id, timestamp, cloud_provider, account_id, resource_id, resource_type, resource_name, change_type, changed_by, change_source, configuration_before, configuration_after, compliance_status, tags FROM cloud_resource_changes WHERE DATE(timestamp) = CURRENT_DATE AND changed_by IS NOT NULL AND changed_by != '' AND (LOWER(tags) LIKE '%production%' OR LOWER(tags) LIKE '%prod%' OR LOWER(resource_name) LIKE '%prod%' OR LOWER(resource_name) LIKE '%production%') ORDER BY timestamp DESC",
+      "agent_explanation": "This query retrieves all cloud resource changes made today in production environments. It filters for records from today using CURRENT_DATE, ensures changes were made by actual users (not automated systems) by checking that changed_by is not null or empty, and identifies production environments by searching for 'production' or 'prod' keywords in the tags and resource_name fields. Results are ordered by timestamp in descending order to show the most recent changes first.",
+      "agent_reasoning_steps": [
+        "Identified cloud_resource_changes as the primary table containing change records",
+        "Used DATE(timestamp) = CURRENT_DATE to filter for today's changes",
+        "Filtered changed_by IS NOT NULL AND changed_by != '' to ensure user-initiated changes",
+        "Made assumption that production environments are identified through tags or resource naming conventions containing 'production' or 'prod'",
+        "Used case-insensitive LIKE searches across tags and resource_name fields to capture various production naming patterns",
+        "Ordered by timestamp DESC to show most recent changes first",
+        "Confidence reduced to 0.75 because 'production environment' identification relies on naming conventions in tags/resource names rather than a dedicated environment field"
+      ],
+      "correctness_score": 0.3,
+      "correctness_reasoning": "The generated query attempts to solve the same problem but has fundamental issues with how it interprets the requirements. While it correctly orders by timestamp DESC and filters for non-null users, it makes critical errors: (1) It uses DATE(timestamp) = CURRENT_DATE instead of timestamp >= DATE_TRUNC('day', NOW()), which is semantically equivalent for 'today' but acceptable. (2) CRITICAL: It checks 'changed_by' instead of 'user_name' - these are different columns with potentially different meanings. (3) CRITICAL: Instead of checking a dedicated 'environment' column with value 'production', it uses fuzzy pattern matching on 'tags' and 'resource_name' fields looking for 'prod' or 'production' strings. This is unreliable and will produce incorrect results - it may miss production resources that don't have these keywords, and may incorrectly include non-production resources. (4) It explicitly lists columns instead of SELECT *, which is a minor stylistic difference. The core logic for identifying production environments is fundamentally wrong, making this query unsuitable for the stated purpose.",
+      "correctness_issues": [
+        "Uses 'changed_by' column instead of 'user_name' - these are likely different fields with different meanings",
+        "Uses unreliable pattern matching on 'tags' and 'resource_name' instead of checking dedicated 'environment' column",
+        "Pattern matching approach will miss production resources without 'prod' keywords and may include false positives",
+        "Adds extra filter 'changed_by != ''', which wasn't in the reference (minor issue)"
+      ],
+      "latency_ms": 11462.185859680176,
+      "total_tokens": 261,
+      "retrieval_precision": 1.0,
+      "retrieved_tables": [
+        "cloud_resource_changes"
+      ],
+      "reference_tables": [
+        "cloud_resource_changes"
+      ],
+      "complexity": "medium",
+      "category": "cloud",
+      "confidence": 0.75
+    },
+    {
+      "agent": "keyword",
+      "test_case_id": "test_med_008",
+      "question": "What are the top 5 blocked URLs by the WAF in the past week?",
+      "reference_sql": "SELECT url, COUNT(*) as block_count FROM waf_events WHERE action = 'block' AND timestamp >= NOW() - INTERVAL '7 days' GROUP BY url ORDER BY block_count DESC LIMIT 5",
+      "generated_sql": "SELECT url, COUNT(*) as block_count FROM proxy_logs WHERE action = 'blocked' AND timestamp >= NOW() - INTERVAL '7 days' GROUP BY url ORDER BY block_count DESC LIMIT 5",
+      "agent_explanation": "This query retrieves the top 5 most frequently blocked URLs from the web proxy logs in the past week. It filters for blocked actions within the last 7 days, groups by URL to count occurrences, and orders by the block count in descending order to show the most blocked URLs first.",
+      "agent_reasoning_steps": [
+        "Identified that WAF (Web Application Firewall) functionality is captured in the proxy_logs table which contains web access logging with action and threat detection fields",
+        "Determined that 'blocked' action in proxy_logs represents URLs blocked by security controls",
+        "Applied time filter for 'past week' using 7-day interval from current timestamp",
+        "Used GROUP BY on url field to aggregate blocking events per URL",
+        "Applied COUNT to determine frequency of blocks per URL",
+        "Used ORDER BY DESC and LIMIT 5 to get top 5 most blocked URLs"
+      ],
+      "correctness_score": 0.3,
+      "correctness_reasoning": "The generated query has the correct overall structure and logic (grouping, counting, ordering, limiting), but it queries the wrong table and uses an incorrect filter value. It queries 'proxy_logs' instead of 'waf_events', which is a critical error since WAF events are specifically stored in the waf_events table. Additionally, it filters for action = 'blocked' instead of action = 'block', which is a data value mismatch. While the query structure demonstrates understanding of the analytical approach needed (aggregation, ordering, limiting), querying the wrong data source for WAF-specific information is a fundamental mistake that would likely return incorrect or no results.",
+      "correctness_issues": [
+        "Wrong table: queries 'proxy_logs' instead of 'waf_events' - WAF events should be in the waf_events table",
+        "Incorrect filter value: uses action = 'blocked' instead of action = 'block'"
+      ],
+      "latency_ms": 9230.117082595825,
+      "total_tokens": 125,
+      "retrieval_precision": 0.0,
+      "retrieved_tables": [
+        "proxy_logs"
+      ],
+      "reference_tables": [
+        "waf_events"
+      ],
+      "complexity": "medium",
+      "category": "application",
+      "confidence": 0.95
+    },
+    {
+      "agent": "keyword",
+      "test_case_id": "test_med_009",
+      "question": "List all email messages with malware attachments received in the last 3 days",
+      "reference_sql": "SELECT * FROM email_events WHERE direction = 'inbound' AND threat_type = 'malware' AND timestamp >= NOW() - INTERVAL '3 days' ORDER BY timestamp DESC",
+      "generated_sql": "SELECT message_id, timestamp, sender_email, sender_domain, subject, attachment_count, attachment_names, attachment_hashes, action_taken FROM email_events WHERE threat_type = 'malware' AND attachment_count > 0 AND timestamp >= NOW() - INTERVAL '3 days' ORDER BY timestamp DESC",
+      "agent_explanation": "This query retrieves all email messages that contain malware attachments received in the last 3 days. It filters for emails where the threat_type is 'malware' and there is at least one attachment (attachment_count > 0). The results are ordered by timestamp in descending order to show the most recent malware emails first. The query returns key information including message ID, timestamp, sender details, subject, attachment information, and the action taken by the email security system.",
+      "agent_reasoning_steps": [
+        "Identified that email_events table contains all necessary fields for email messages with threat information",
+        "Determined that 'malware' threat_type field directly indicates malware detection",
+        "Added attachment_count > 0 condition to ensure only emails with attachments are included",
+        "Used timestamp >= NOW() - INTERVAL '3 days' to filter for last 3 days of data",
+        "Selected relevant fields including attachment details (names and hashes) for investigation purposes",
+        "Added ORDER BY timestamp DESC to prioritize most recent threats",
+        "Included action_taken field to show how the security system handled each malware email"
+      ],
+      "correctness_score": 0.7,
+      "correctness_reasoning": "The generated SQL is mostly correct and addresses the core requirement of finding malware attachments in the last 3 days, but has one significant omission and one unnecessary addition. It correctly filters by threat_type='malware', uses the proper time window (>= NOW() - INTERVAL '3 days'), and includes appropriate ORDER BY timestamp DESC. However, it's missing the critical 'direction = inbound' filter that the reference SQL includes to ensure only received messages are returned, which is explicitly stated in the question ('received in the last 3 days'). The addition of 'attachment_count > 0' is redundant since threat_type='malware' already implies attachments exist, though not harmful. The explicit column selection instead of SELECT * is actually a minor improvement in practice, though technically different from the reference. The missing inbound filter is a significant logical gap that could include outbound malware emails, which doesn't match the question's requirement.",
+      "correctness_issues": [
+        "Missing 'direction = inbound' filter - the question specifically asks for 'received' messages, but the query doesn't filter for inbound direction",
+        "Unnecessary 'attachment_count > 0' condition - redundant since malware threat_type already implies attachments",
+        "Uses explicit column selection instead of SELECT * - minor difference, not necessarily wrong"
+      ],
+      "latency_ms": 9480.464935302734,
+      "total_tokens": 209,
+      "retrieval_precision": 1.0,
+      "retrieved_tables": [
+        "email_events"
+      ],
+      "reference_tables": [
+        "email_events"
+      ],
+      "complexity": "medium",
+      "category": "email",
+      "confidence": 0.95
+    },
+    {
+      "agent": "keyword",
+      "test_case_id": "test_com_001",
+      "question": "Show me all endpoints that executed suspicious processes and then had outbound connections to domains flagged in our threat intelligence within the same hour",
+      "reference_sql": "SELECT DISTINCT pe.hostname, pe.process_name, pe.command_line, nt.destination_ip, nt.destination_domain, ti.threat_type, ti.confidence_score FROM process_execution pe JOIN network_traffic nt ON pe.hostname = nt.source_hostname AND nt.timestamp BETWEEN pe.timestamp AND pe.timestamp + INTERVAL '1 hour' JOIN threat_intelligence ti ON nt.destination_domain = ti.indicator_value WHERE ti.indicator_type = 'domain' AND pe.process_name IN ('powershell.exe', 'cmd.exe', 'wscript.exe', 'cscript.exe', 'mshta.exe') AND pe.timestamp >= NOW() - INTERVAL '7 days' ORDER BY pe.timestamp DESC",
+      "generated_sql": "SELECT DISTINCT pe.hostname, pe.process_name, pe.timestamp AS process_time, nt.destination_hostname, nt.timestamp AS connection_time, ti.indicator_value AS flagged_domain, ti.threat_type FROM process_events pe JOIN network_traffic nt ON pe.hostname = nt.source_hostname AND nt.direction = 'outbound' AND nt.timestamp BETWEEN pe.timestamp AND pe.timestamp + INTERVAL '1 hour' JOIN threat_intelligence ti ON (nt.destination_hostname = ti.indicator_value OR dns_queries.query_name = ti.indicator_value) AND ti.indicator_type IN ('domain', 'url') AND ti.active = true WHERE pe.is_suspicious = true AND pe.timestamp >= NOW() - INTERVAL '7 days' ORDER BY pe.hostname, pe.timestamp DESC",
+      "agent_explanation": "This query identifies endpoints where suspicious processes were executed followed by outbound network connections to threat intelligence-flagged domains within the same hour. It joins process_events (for suspicious process execution), network_traffic (for outbound connections), and threat_intelligence (for flagged domains). The time correlation ensures connections occurred within 1 hour after the suspicious process started. Results show the endpoint, suspicious process details, connection information, and the flagged domain.",
+      "agent_reasoning_steps": [
+        "Identified need for process_events table to find suspicious processes (pe.is_suspicious = true), though this table wasn't in the provided schema",
+        "Used network_traffic table to find outbound connections from the same endpoints",
+        "Used threat_intelligence table to identify flagged/malicious domains",
+        "Applied temporal correlation: network connection timestamp must be within 1 hour after process execution (BETWEEN pe.timestamp AND pe.timestamp + INTERVAL '1 hour')",
+        "Matched destination hostnames in network traffic against threat intelligence indicators",
+        "Filtered for active threat intelligence indicators and domain/url types",
+        "Added 7-day lookback window to limit result set size",
+        "Assumed process_events table exists with fields: hostname, process_name, timestamp, is_suspicious - this is a reasonable assumption for a security events database but not confirmed in provided schemas",
+        "Validation warnings: Unknown fields: pe.hostname, pe.process_name",
+        "Validation errors: Unknown tables: process_events"
+      ],
+      "correctness_score": 0.7,
+      "correctness_reasoning": "The generated SQL demonstrates a correct understanding of the core requirement (finding endpoints with suspicious processes followed by outbound connections to threat intelligence domains within an hour) but has several significant issues. POSITIVE: (1) Correctly joins process events to network traffic with time window constraint, (2) Joins to threat_intelligence on domain matching, (3) Applies appropriate time filtering (7 days), (4) Uses DISTINCT and ORDER BY appropriately. ISSUES: (1) Table name mismatch: uses 'process_events' instead of 'process_execution' - potentially breaking query, (2) Column mismatch: uses 'nt.destination_hostname' instead of 'nt.destination_domain', (3) Suspicious process definition differs: uses 'pe.is_suspicious = true' flag instead of explicit list of known suspicious executables (powershell.exe, cmd.exe, etc.) - different semantic meaning, (4) References undefined table 'dns_queries' in JOIN condition without proper join, (5) Adds extra filters (nt.direction, ti.active) and broadens scope (ti.indicator_type includes 'url'), (6) Missing key columns from SELECT (command_line, confidence_score). The most critical issue is the different definition of 'suspicious processes' - the reference explicitly lists known dangerous executables while the generated query assumes a boolean flag exists, which may not capture the same set of processes.",
+      "correctness_issues": [
+        "Uses table 'process_events' instead of 'process_execution' which may not exist",
+        "Uses 'destination_hostname' instead of 'destination_domain' column",
+        "Different suspicious process definition: boolean flag vs explicit list of dangerous executables",
+        "References undefined 'dns_queries' table in JOIN condition",
+        "Missing important columns: command_line, confidence_score, destination_ip",
+        "Adds extra conditions not in reference: nt.direction, ti.active, broadened indicator_type"
+      ],
+      "latency_ms": 13408.247947692871,
+      "total_tokens": 340,
+      "retrieval_precision": 0.6666666666666666,
+      "retrieved_tables": [
+        "threat_intelligence",
+        "process_events",
+        "network_traffic"
+      ],
+      "reference_tables": [
+        "process_execution",
+        "network_traffic",
+        "threat_intelligence"
+      ],
+      "complexity": "complex",
+      "category": "endpoint",
+      "confidence": 0.5
+    },
+    {
+      "agent": "keyword",
+      "test_case_id": "test_com_003",
+      "question": "Which cloud resources were created or modified by users whose endpoints later triggered high-severity security alerts involving file encryption or ransomware activity",
+      "reference_sql": "SELECT DISTINCT crc.cloud_provider, crc.account_id, crc.resource_type, crc.resource_id, crc.change_type, crc.user_name, crc.timestamp as change_timestamp, sa.alert_name, sa.severity, sa.detection_timestamp, ee.event_type as endpoint_event FROM cloud_resource_changes crc JOIN security_alerts sa ON crc.user_name = sa.user_name AND sa.detection_timestamp >= crc.timestamp AND sa.detection_timestamp <= crc.timestamp + INTERVAL '72 hours' JOIN endpoint_events ee ON sa.hostname = ee.hostname AND ee.timestamp BETWEEN sa.detection_timestamp - INTERVAL '1 hour' AND sa.detection_timestamp WHERE sa.severity IN ('high', 'critical') AND (sa.alert_name ILIKE '%ransomware%' OR sa.alert_name ILIKE '%encryption%' OR ee.event_type ILIKE '%file_encryption%') AND crc.timestamp >= NOW() - INTERVAL '30 days' ORDER BY crc.timestamp DESC",
+      "generated_sql": "SELECT DISTINCT c.resource_id, c.resource_name, c.resource_type, c.operation, c.timestamp AS resource_timestamp, c.user_name, e.hostname, e.timestamp AS alert_timestamp, e.threat_name, e.threat_category, s.alert_name, s.severity FROM cloud_audit_logs c INNER JOIN endpoint_events e ON c.user_name = e.user_name INNER JOIN security_alerts s ON e.hostname = JSON_EXTRACT(s.affected_assets, '$[*]') WHERE (c.operation IN ('CREATE', 'UPDATE', 'MODIFY', 'PUT', 'POST') OR c.operation LIKE '%create%' OR c.operation LIKE '%modify%' OR c.operation LIKE '%update%') AND s.severity IN ('high', 'critical') AND (e.threat_category LIKE '%ransomware%' OR e.threat_category LIKE '%encryption%' OR e.threat_name LIKE '%ransomware%' OR e.threat_name LIKE '%encrypt%' OR s.alert_name LIKE '%ransomware%' OR s.alert_name LIKE '%encryption%' OR s.description LIKE '%file encryption%') AND e.timestamp > c.timestamp ORDER BY c.timestamp DESC",
+      "agent_explanation": "This query identifies cloud resources that were created or modified by users whose endpoints subsequently triggered high-severity security alerts related to file encryption or ransomware activity. It joins cloud audit logs with endpoint events on user names, then connects to security alerts via affected assets. The query filters for create/modify operations in the cloud, high-severity alerts, and encryption/ransomware-related threats, ensuring the endpoint alert occurred after the cloud resource activity (temporal correlation). Results are ordered by resource modification time to show the timeline of activities.",
+      "agent_reasoning_steps": [
+        "Identified need for cloud_audit_logs table (not in provided schema) to track resource creation/modification",
+        "Need endpoint_events to identify endpoints with file encryption/ransomware activity",
+        "Need security_alerts for high-severity alert filtering",
+        "Join cloud_audit_logs to endpoint_events on user_name to link user activities",
+        "Join endpoint_events to security_alerts via affected_assets to get alert details",
+        "Filter for cloud operations: CREATE, UPDATE, MODIFY operations",
+        "Filter for high-severity alerts: severity IN ('high', 'critical')",
+        "Filter for encryption/ransomware indicators in threat_name, threat_category, and alert descriptions",
+        "Apply temporal logic: endpoint alert timestamp > cloud operation timestamp (later triggered)",
+        "Include DISTINCT to avoid duplicate results from JSON array matching",
+        "Major assumption: cloud_audit_logs table exists but was not provided in schema, which significantly impacts confidence score",
+        "Validation warnings: Unknown fields: c.resource_id, c.operation"
+      ],
+      "correctness_score": 0.3,
+      "correctness_reasoning": "The generated SQL has significant structural and logical issues that prevent it from correctly answering the question. While it attempts to address the core requirement (resources modified by users whose endpoints triggered ransomware/encryption alerts), it uses wrong tables, incorrect join logic, and flawed temporal relationships. The reference uses 'cloud_resource_changes' as the primary table, while the generated query uses 'cloud_audit_logs' which may not exist or contain the right data. Most critically, the join logic is fundamentally broken: it joins security_alerts to endpoint_events using a JSON_EXTRACT on affected_assets, which is syntactically questionable and semantically incorrect (the reference joins on hostname). The temporal logic is also reversed - the generated query requires endpoint events AFTER cloud changes (e.timestamp > c.timestamp), when the question asks for alerts that came 'later' after the changes, meaning we need to correlate changes to subsequent alerts (which the reference does correctly with detection_timestamp >= change_timestamp). The generated query also lacks the important 72-hour window constraint and 30-day lookback period present in the reference.",
+      "correctness_issues": [
+        "Uses wrong primary table 'cloud_audit_logs' instead of 'cloud_resource_changes'",
+        "Incorrect join between security_alerts and endpoint_events using JSON_EXTRACT instead of hostname equality",
+        "Flawed temporal logic: requires e.timestamp > c.timestamp without proper correlation to security_alerts timestamp",
+        "Missing critical temporal constraints: 72-hour window between change and alert, and 30-day lookback period",
+        "Wrong join condition between cloud changes and security alerts (should be on user_name with timestamp constraints)",
+        "Selects different columns than reference (includes threat_name, threat_category not in reference schema implied by reference query)",
+        "Operation filtering logic differs significantly from reference change_type usage"
+      ],
+      "latency_ms": 16199.34105873108,
+      "total_tokens": 426,
+      "retrieval_precision": 0.6666666666666666,
+      "retrieved_tables": [
+        "security_alerts",
+        "endpoint_events",
+        "cloud_audit_logs"
+      ],
+      "reference_tables": [
+        "cloud_resource_changes",
+        "security_alerts",
+        "endpoint_events"
+      ],
+      "complexity": "complex",
+      "category": "cloud",
+      "confidence": 0.65
+    },
+    {
+      "agent": "semantic",
+      "test_case_id": "test_sim_001",
+      "question": "Show me all critical severity endpoint events from the last 24 hours",
+      "reference_sql": "SELECT * FROM endpoint_events WHERE severity = 'critical' AND timestamp >= NOW() - INTERVAL '24 hours'",
+      "generated_sql": "SELECT * FROM endpoint_events WHERE severity = 'critical' AND timestamp >= NOW() - INTERVAL '24 hours' ORDER BY timestamp DESC",
+      "agent_explanation": "This query retrieves all endpoint security events with critical severity that occurred within the last 24 hours. The results are ordered by timestamp in descending order to show the most recent events first.",
+      "agent_reasoning_steps": [
+        "Identified 'endpoint_events' as the primary table based on the question asking for 'endpoint events'",
+        "Applied severity filter for 'critical' level using WHERE clause",
+        "Added time-based filter using timestamp field with 24-hour interval calculation",
+        "Included ORDER BY timestamp DESC to show most recent critical events first",
+        "High confidence due to clear question requirements and direct field mappings"
+      ],
+      "correctness_score": 0.9,
+      "correctness_reasoning": "The generated SQL is semantically equivalent to the reference SQL and correctly answers the question. It queries the right table (endpoint_events), applies the correct filters (severity = 'critical' and timestamp within last 24 hours), and selects all columns as requested. The only difference is the addition of 'ORDER BY timestamp DESC', which is actually a sensible enhancement for viewing recent events first, though it was not specified in the reference query. This is a minor cosmetic difference that doesn't affect correctness - it may even be considered an improvement for practical use. The core logic is identical and the query will return the exact same rows as the reference, just in a different order.",
+      "correctness_issues": [],
+      "latency_ms": 8047.6319789886475,
+      "total_tokens": 99,
+      "retrieval_precision": 1.0,
+      "retrieved_tables": [
+        "endpoint_events"
+      ],
+      "reference_tables": [
+        "endpoint_events"
+      ],
+      "complexity": "simple",
+      "category": "endpoint",
+      "confidence": 0.95
+    },
+    {
+      "agent": "semantic",
+      "test_case_id": "test_sim_002",
+      "question": "Find all blocked firewall events",
+      "reference_sql": "SELECT * FROM firewall_events WHERE action = 'deny'",
+      "generated_sql": "SELECT * FROM firewall_events WHERE action IN ('deny', 'drop') ORDER BY timestamp DESC",
+      "agent_explanation": "This query retrieves all firewall events where the action was either 'deny' or 'drop', which represents blocked traffic. The results are ordered by timestamp in descending order to show the most recent blocked events first. The firewall_events table uses 'action' field to record the firewall's decision, and blocked events are typically recorded as either 'deny' or 'drop' actions.",
+      "agent_reasoning_steps": [
+        "Identified that 'blocked' firewall events correspond to the 'action' field in the firewall_events table",
+        "Determined that blocked actions are represented by 'deny' or 'drop' values (as opposed to 'allow')",
+        "Selected all fields using * since the question asks for 'all blocked firewall events' without specifying particular columns",
+        "Added ORDER BY timestamp DESC to show most recent events first, which is a common requirement for security event queries",
+        "High confidence because the question is straightforward and the firewall_events table clearly contains the needed data with an 'action' field that distinguishes between allowed and blocked traffic"
+      ],
+      "correctness_score": 0.9,
+      "correctness_reasoning": "The generated SQL correctly identifies the core requirement of finding blocked firewall events by querying the firewall_events table and filtering for denied traffic. The main logic is sound and would return all blocked events. The query includes 'drop' as an additional blocking action, which is technically a more comprehensive interpretation of 'blocked' events in firewall terminology (both 'deny' and 'drop' are common blocking actions). The added ORDER BY timestamp DESC clause provides useful sorting but wasn't explicitly required by the question. These are enhancements rather than errors - the query would successfully answer the question and arguably does so more thoroughly than the reference.",
+      "correctness_issues": [
+        "Includes additional action 'drop' not present in reference (though this could be considered a valid interpretation of 'blocked')",
+        "Adds ORDER BY clause not present in reference (minor cosmetic difference, not required by question)"
+      ],
+      "latency_ms": 10545.588254928589,
+      "total_tokens": 124,
+      "retrieval_precision": 1.0,
+      "retrieved_tables": [
+        "firewall_events"
+      ],
+      "reference_tables": [
+        "firewall_events"
+      ],
+      "complexity": "simple",
+      "category": "network",
+      "confidence": 0.95
+    },
+    {
+      "agent": "semantic",
+      "test_case_id": "test_sim_003",
+      "question": "What authentication failures happened today",
+      "reference_sql": "SELECT * FROM authentication_events WHERE status = 'failure' AND timestamp >= CURRENT_DATE",
+      "generated_sql": "SELECT event_id, timestamp, event_type, user_name, user_id, source_ip, source_hostname, destination_hostname, failure_reason, authentication_method, protocol, application, mfa_used, privileged_account, risk_score FROM authentication_events WHERE status = 'failure' AND DATE(timestamp) = CURRENT_DATE ORDER BY timestamp DESC",
+      "agent_explanation": "This query retrieves all authentication failure events that occurred today by filtering the authentication_events table for records with status='failure' and a timestamp matching the current date. The results are ordered by timestamp in descending order to show the most recent failures first. The query returns key information including event identifiers, timing, user details, source information, failure reasons, authentication methods, and risk indicators.",
+      "agent_reasoning_steps": [
+        "Identified 'authentication failures' maps to authentication_events table with status='failure'",
+        "Determined 'today' requires filtering timestamp to current date using DATE(timestamp) = CURRENT_DATE",
+        "Selected relevant fields that provide comprehensive context about authentication failures including user identity, source location, failure reasons, and risk indicators",
+        "Applied ORDER BY timestamp DESC to show most recent failures first for operational relevance",
+        "High confidence due to clear question intent and direct field mapping in the schema"
+      ],
+      "correctness_score": 0.9,
+      "correctness_reasoning": "The generated SQL correctly answers the question 'What authentication failures happened today'. It queries the same table (authentication_events), applies the same filtering conditions (status = 'failure' and today's date), and will return the correct results. The differences are cosmetic and arguably improvements: (1) It explicitly lists columns instead of using SELECT *, which is often considered better practice in production code; (2) It uses DATE(timestamp) = CURRENT_DATE instead of timestamp >= CURRENT_DATE, which is semantically equivalent for finding today's records; (3) It adds ORDER BY timestamp DESC, which provides a logical ordering (most recent first) that makes sense for reviewing authentication failures. These differences do not change the correctness of answering the question - the query will return all authentication failures from today. The explicit column selection and ordering actually enhance usability without compromising correctness.",
+      "correctness_issues": [
+        "Uses explicit column list instead of SELECT * (minor style difference, not an error)",
+        "Uses DATE(timestamp) = CURRENT_DATE instead of timestamp >= CURRENT_DATE (semantically equivalent)",
+        "Adds ORDER BY timestamp DESC (enhancement, not in reference but logical for the use case)"
+      ],
+      "latency_ms": 9725.04210472107,
+      "total_tokens": 205,
+      "retrieval_precision": 1.0,
+      "retrieved_tables": [
+        "authentication_events"
+      ],
+      "reference_tables": [
+        "authentication_events"
+      ],
+      "complexity": "simple",
+      "category": "authentication",
+      "confidence": 0.95
+    },
+    {
+      "agent": "semantic",
+      "test_case_id": "test_sim_004",
+      "question": "Show me all phishing emails detected this week",
+      "reference_sql": "SELECT * FROM email_events WHERE threat_detected = true AND threat_type = 'phishing' AND timestamp >= CURRENT_DATE - INTERVAL '7 days'",
+      "generated_sql": "SELECT message_id, timestamp, sender_email, sender_domain, subject, recipient_emails, action_taken, spam_score, spf_result, dkim_result, dmarc_result FROM email_events WHERE threat_type = 'phishing' AND timestamp >= NOW() - INTERVAL '7 days' ORDER BY timestamp DESC",
+      "agent_explanation": "This query retrieves all phishing emails detected in the last 7 days from the email_events table. It filters for threat_type = 'phishing' and uses a timestamp condition to limit results to the current week (last 7 days). Results are ordered by timestamp in descending order to show the most recent phishing attempts first. The query returns key fields including message ID, timestamp, sender information, subject, recipients, action taken, spam score, and email authentication results (SPF, DKIM, DMARC).",
+      "agent_reasoning_steps": [
+        "Identified 'phishing emails' maps to email_events table with threat_type field",
+        "'This week' interpreted as last 7 days using NOW() - INTERVAL '7 days' for timestamp filtering",
+        "Selected relevant fields for phishing analysis: sender details, subject, recipients, action taken, and authentication results",
+        "Added ORDER BY timestamp DESC to show most recent detections first",
+        "High confidence due to clear question intent and direct field mapping in schema"
+      ],
+      "correctness_score": 0.7,
+      "correctness_reasoning": "The generated SQL correctly identifies the core requirements: querying the email_events table, filtering for phishing threats, and using a 7-day time window. However, it has one significant issue: it's missing the 'threat_detected = true' filter that is present in the reference query. This means it could potentially return phishing emails that were NOT detected (if such records exist in the database). The query also uses explicit column selection instead of SELECT *, which is actually better practice, and adds ORDER BY timestamp DESC for better presentation. The time comparison uses NOW() instead of CURRENT_DATE, which is functionally similar for a 7-day window. Overall, the logic is mostly correct but the missing threat_detected filter is a notable oversight that could return incorrect results.",
+      "correctness_issues": [
+        "Missing 'threat_detected = true' filter - could return undetected phishing emails",
+        "Uses NOW() instead of CURRENT_DATE (minor difference, both work for 7-day window)"
+      ],
+      "latency_ms": 9662.63198852539,
+      "total_tokens": 203,
+      "retrieval_precision": 1.0,
+      "retrieved_tables": [
+        "email_events"
+      ],
+      "reference_tables": [
+        "email_events"
+      ],
+      "complexity": "simple",
+      "category": "email",
+      "confidence": 0.95
+    },
+    {
+      "agent": "semantic",
+      "test_case_id": "test_sim_005",
+      "question": "List all high severity security alerts that are still open",
+      "reference_sql": "SELECT * FROM security_alerts WHERE severity = 'high' AND status = 'open'",
+      "generated_sql": "SELECT alert_id, timestamp, alert_name, alert_type, severity, priority, source_system, detection_method, confidence_score, affected_assets, affected_users, description, assigned_to FROM security_alerts WHERE severity = 'high' AND status NOT IN ('resolved', 'false_positive')",
+      "agent_explanation": "This query retrieves all high severity security alerts that are currently open (not resolved or marked as false positive). It selects key fields including the alert identifier, timestamp, name, type, severity, priority, source system, detection method, confidence score, affected assets and users, description, and assigned analyst. The WHERE clause filters for alerts with 'high' severity and excludes those with status 'resolved' or 'false_positive', effectively capturing all open high severity alerts (including statuses like 'new' and 'investigating').",
+      "agent_reasoning_steps": [
+        "Identified that 'security_alerts' table is the primary source for security alert data",
+        "Determined that 'high severity' maps to WHERE severity = 'high'",
+        "Interpreted 'still open' to mean alerts that are not resolved or marked as false positive",
+        "Used NOT IN ('resolved', 'false_positive') to exclude closed alerts while including 'new' and 'investigating' statuses",
+        "Selected relevant fields that provide comprehensive information about the alerts",
+        "Query is straightforward with clear field mappings and no joins required"
+      ],
+      "correctness_score": 0.85,
+      "correctness_reasoning": "The generated SQL is semantically very close to the reference query with correct core logic but has two notable differences. First, it explicitly lists all columns instead of using SELECT *, which is actually a better practice but differs from the reference. Second, it uses 'status NOT IN (resolved, false_positive)' instead of 'status = open'. While this filtering approach may capture the same records if 'open' is the only status besides 'resolved' and 'false_positive', it makes an assumption about the status values that isn't guaranteed by the schema. The reference query is more precise and direct. However, the generated query correctly identifies the right table, filters for high severity, and attempts to filter for open alerts, demonstrating sound understanding of the requirements.",
+      "correctness_issues": [
+        "Uses 'status NOT IN (resolved, false_positive)' instead of the more direct 'status = open', which may not be equivalent if other status values exist",
+        "Lists all columns explicitly instead of SELECT * (minor stylistic difference from reference, though arguably better practice)"
+      ],
+      "latency_ms": 9805.320978164673,
+      "total_tokens": 221,
+      "retrieval_precision": 1.0,
+      "retrieved_tables": [
+        "security_alerts"
+      ],
+      "reference_tables": [
+        "security_alerts"
+      ],
+      "complexity": "simple",
+      "category": "security_ops",
+      "confidence": 0.95
+    },
+    {
+      "agent": "semantic",
+      "test_case_id": "test_sim_006",
+      "question": "Find all DLP violations involving credit card data",
+      "reference_sql": "SELECT * FROM dlp_events WHERE data_type = 'credit_card' OR content_matches LIKE '%credit card%'",
+      "generated_sql": "SELECT event_id, timestamp, user_name, source_hostname, source_ip, policy_name, severity, channel, action_taken, file_name, destination, matches_count, match_details FROM dlp_events WHERE data_type = 'PCI' ORDER BY timestamp DESC",
+      "agent_explanation": "This query retrieves all Data Loss Prevention (DLP) violations where the sensitive data type is 'PCI' (Payment Card Industry data, which includes credit card information). The query selects key fields including event details, user information, policy triggered, severity, channel used, action taken by the system, and file information. Results are ordered by timestamp in descending order to show the most recent violations first.",
+      "agent_reasoning_steps": [
+        "Identified that DLP violations are stored in the 'dlp_events' table",
+        "Recognized that 'credit card data' maps to the 'PCI' value in the 'data_type' field (PCI = Payment Card Industry data standard)",
+        "Selected relevant fields that provide comprehensive information about each violation",
+        "Added ORDER BY timestamp DESC to show most recent violations first",
+        "High confidence as the question directly maps to a specific table and field value"
+      ],
+      "correctness_score": 0.3,
+      "correctness_reasoning": "The generated query queries the correct table (dlp_events) and attempts to filter for credit card-related violations, which shows basic understanding. However, it has several significant issues: (1) It filters by data_type = 'PCI' instead of 'credit_card', which assumes PCI compliance data equates to credit card data - this may miss violations explicitly tagged as 'credit_card' and could include non-credit-card PCI data. (2) It completely omits the alternative filter condition 'content_matches LIKE %credit card%', meaning it will miss any violations where credit card information was detected through content matching rather than data type classification. (3) It excludes several potentially important columns (data_type, content_matches) that the reference includes via SELECT *. (4) It adds an ORDER BY timestamp DESC clause not in the reference, which changes result ordering but doesn't affect correctness of which records are returned. The query shows partial understanding but the filtering logic is fundamentally different and likely incomplete, potentially missing many relevant violations.",
+      "correctness_issues": [
+        "Filters by data_type = 'PCI' instead of 'credit_card' - may not capture all credit card violations",
+        "Missing the alternative filter condition: content_matches LIKE '%credit card%'",
+        "Excludes important columns like data_type and content_matches that would help verify the match",
+        "Uses SELECT with explicit columns instead of SELECT * - misses columns present in reference"
+      ],
+      "latency_ms": 8553.482055664062,
+      "total_tokens": 177,
+      "retrieval_precision": 1.0,
+      "retrieved_tables": [
+        "dlp_events"
+      ],
+      "reference_tables": [
+        "dlp_events"
+      ],
+      "complexity": "simple",
+      "category": "dlp",
+      "confidence": 0.95
+    },
+    {
+      "agent": "semantic",
+      "test_case_id": "test_sim_007",
+      "question": "Show me processes executed by SYSTEM account",
+      "reference_sql": "SELECT * FROM process_execution WHERE user_name = 'SYSTEM'",
+      "generated_sql": "SELECT event_id, timestamp, hostname, process_name, process_id, process_path, command_line, parent_process_name, parent_process_id, integrity_level, current_directory, signed, signature_valid, signer FROM process_execution WHERE UPPER(user_name) = 'SYSTEM' ORDER BY timestamp DESC",
+      "agent_explanation": "This query retrieves all processes executed by the SYSTEM account from the process_execution table. It selects key fields including process identification (name, ID, path), execution context (hostname, timestamp, command line), parent process information, security attributes (integrity level, signature status), and orders results by most recent first. The UPPER() function ensures case-insensitive matching for the SYSTEM account name.",
+      "agent_reasoning_steps": [
+        "Identified that the question asks for processes executed by a specific user account (SYSTEM)",
+        "Located the process_execution table as the primary source for process execution telemetry",
+        "Found the user_name field which tracks the executing user",
+        "Applied a WHERE clause filtering for SYSTEM account (using UPPER() for case-insensitivity since SYSTEM can appear as 'SYSTEM', 'system', or 'NT AUTHORITY\\SYSTEM')",
+        "Selected relevant fields that provide comprehensive process execution details",
+        "Added ORDER BY timestamp DESC to show most recent executions first, which is typically most useful for security analysis",
+        "High confidence (0.95) due to clear question intent and direct field mapping"
+      ],
+      "correctness_score": 0.9,
+      "correctness_reasoning": "The generated SQL correctly addresses the core requirement of finding processes executed by the SYSTEM account. It queries the correct table (process_execution) and applies the appropriate filter (user_name = 'SYSTEM'). The main difference is that it explicitly selects specific columns instead of using SELECT *, adds UPPER() function for case-insensitive matching, and includes ORDER BY timestamp DESC for chronological ordering. These are enhancements rather than errors - the explicit column selection is actually better practice than SELECT *, the UPPER() function makes the query more robust to case variations, and the ordering provides useful chronological context. The query is semantically equivalent and arguably superior to the reference for production use, but it's not identical in approach.",
+      "correctness_issues": [
+        "Uses explicit column list instead of SELECT * (minor enhancement, not an error)",
+        "Adds UPPER() function for case-insensitive comparison (enhancement for robustness)",
+        "Includes ORDER BY timestamp DESC which wasn't in reference (useful addition but not requested)"
+      ],
+      "latency_ms": 11049.837589263916,
+      "total_tokens": 190,
+      "retrieval_precision": 1.0,
+      "retrieved_tables": [
+        "process_execution"
+      ],
+      "reference_tables": [
+        "process_execution"
+      ],
+      "complexity": "simple",
+      "category": "endpoint",
+      "confidence": 0.95
+    },
+    {
+      "agent": "semantic",
+      "test_case_id": "test_sim_008",
+      "question": "What critical vulnerabilities were found on production servers",
+      "reference_sql": "SELECT * FROM vulnerability_scans WHERE severity = 'critical' AND hostname LIKE '%prod%'",
+      "generated_sql": "SELECT vs.vulnerability_id, vs.vulnerability_name, vs.hostname, vs.ip_address, vs.cvss_score, vs.description, vs.solution, vs.exploitable, vs.patch_available, vs.status, vs.timestamp FROM vulnerability_scans vs WHERE vs.severity = 'critical' AND vs.status != 'resolved' AND vs.false_positive = false AND (LOWER(vs.hostname) LIKE '%prod%' OR LOWER(vs.hostname) LIKE '%production%') ORDER BY vs.cvss_score DESC, vs.timestamp DESC",
+      "agent_explanation": "This query retrieves all critical severity vulnerabilities from the vulnerability_scans table that are currently unresolved and not marked as false positives. It filters for production servers by looking for 'prod' or 'production' in the hostname. The results are ordered by CVSS score (highest first) and then by timestamp (most recent first) to prioritize the most severe and recent vulnerabilities. Key fields returned include the vulnerability identifier, name, affected host details, severity metrics, remediation information, and exploitation status.",
+      "agent_reasoning_steps": [
+        "Identified that 'vulnerabilities' maps to the vulnerability_scans table which contains vulnerability scan data",
+        "'Critical' severity is a direct field match in the severity column",
+        "'Production servers' requires filtering by hostname pattern since there's no explicit environment field - using pattern matching for 'prod' or 'production' in hostname",
+        "Excluded resolved vulnerabilities (status != 'resolved') since the question asks for found vulnerabilities, implying current/active ones",
+        "Excluded false positives to ensure only real vulnerabilities are returned",
+        "Ordered by CVSS score descending to show most critical first, then by timestamp to show most recent",
+        "Confidence reduced to 0.85 because hostname pattern matching for 'production' may not capture all production servers if they use different naming conventions"
+      ],
+      "correctness_score": 0.9,
+      "correctness_reasoning": "The generated SQL correctly identifies the core requirements: querying the vulnerability_scans table, filtering for 'critical' severity, and matching production servers via hostname. It expands on the reference query with sensible refinements: explicitly selecting relevant columns instead of SELECT *, using case-insensitive matching (LOWER), including both 'prod' and 'production' patterns, filtering out resolved and false positive vulnerabilities, and ordering results by risk (cvss_score DESC). These enhancements actually improve the practical utility of the query while maintaining semantic equivalence to the reference. The core logic is identical - both queries find critical vulnerabilities on production servers. The additional filters (status != 'resolved', false_positive = false) are reasonable interpretations of 'found vulnerabilities' meaning current/active issues, and the expanded hostname matching is more comprehensive. The explicit column selection is a best practice over SELECT *. Minor deduction only because the reference uses simpler logic and the additional filters, while sensible, go beyond the minimal specification.",
+      "correctness_issues": [
+        "Adds filters (status != 'resolved', false_positive = false) not in reference - though reasonable interpretations",
+        "Uses explicit column list instead of SELECT * - best practice but differs from reference",
+        "Adds ORDER BY clause not specified in reference - enhances usability but not required"
+      ],
+      "latency_ms": 13999.93896484375,
+      "total_tokens": 260,
+      "retrieval_precision": 1.0,
+      "retrieved_tables": [
+        "vulnerability_scans"
+      ],
+      "reference_tables": [
+        "vulnerability_scans"
+      ],
+      "complexity": "simple",
+      "category": "vulnerability",
+      "confidence": 0.85
+    },
+    {
+      "agent": "semantic",
+      "test_case_id": "test_sim_009",
+      "question": "Find all AWS console login events",
+      "reference_sql": "SELECT * FROM cloud_audit_logs WHERE cloud_provider = 'aws' AND service = 'signin' AND action = 'ConsoleLogin'",
+      "generated_sql": "SELECT event_id, timestamp, account_id, region, user_name, user_type, source_ip, user_agent, mfa_authenticated, action_result, error_code, error_message FROM cloud_audit_logs WHERE cloud_provider = 'AWS' AND event_name = 'ConsoleLogin' ORDER BY timestamp DESC",
+      "agent_explanation": "This query retrieves all AWS console login events from the cloud_audit_logs table. It filters for AWS as the cloud provider and 'ConsoleLogin' as the event name, which is the standard AWS CloudTrail event name for console sign-in attempts. The results include key details like timestamp, account ID, region, user information, source IP, MFA status, and whether the login succeeded or failed. Results are ordered by most recent first.",
+      "agent_reasoning_steps": [
+        "Identified that AWS console logins are recorded in cloud_audit_logs table",
+        "AWS console login events have event_name = 'ConsoleLogin' in CloudTrail",
+        "Added cloud_provider = 'AWS' filter to ensure only AWS events are returned",
+        "Selected relevant fields: user identity, authentication details, MFA status, and result",
+        "Ordered by timestamp DESC to show most recent logins first",
+        "High confidence as AWS ConsoleLogin is a well-defined CloudTrail event type"
+      ],
+      "correctness_score": 0.5,
+      "correctness_reasoning": "The generated query attempts to find AWS console login events but has significant logical differences from the reference. While it correctly targets the 'cloud_audit_logs' table and filters for AWS (case-insensitive comparison is acceptable), it uses 'event_name = ConsoleLogin' instead of the reference's combination of 'service = signin' AND 'action = ConsoleLogin'. This represents a fundamentally different filtering approach that may not retrieve the same records depending on the schema design. The generated query explicitly lists columns instead of using SELECT *, which is acceptable but different. The addition of ORDER BY timestamp DESC is a reasonable enhancement. However, the core issue is the filtering logic mismatch - the reference uses a two-field approach (service + action) while the generated uses a single field (event_name), which suggests either a misunderstanding of the schema or querying different data points. Without knowing if 'event_name' is equivalent to the combination of 'service' and 'action', this is a significant correctness concern.",
+      "correctness_issues": [
+        "Uses 'event_name = ConsoleLogin' instead of 'service = signin' AND 'action = ConsoleLogin' - fundamentally different filtering logic",
+        "Missing the 'service = signin' condition entirely",
+        "Uses 'action_result' column which doesn't appear in reference filtering criteria",
+        "Explicitly lists columns instead of SELECT * (minor issue, but changes output structure)"
+      ],
+      "latency_ms": 9958.790063858032,
+      "total_tokens": 180,
+      "retrieval_precision": 1.0,
+      "retrieved_tables": [
+        "cloud_audit_logs"
+      ],
+      "reference_tables": [
+        "cloud_audit_logs"
+      ],
+      "complexity": "simple",
+      "category": "cloud",
+      "confidence": 0.95
+    },
+    {
+      "agent": "semantic",
+      "test_case_id": "test_sim_010",
+      "question": "Show me all SQL injection attacks detected by the WAF",
+      "reference_sql": "SELECT * FROM waf_events WHERE attack_type = 'sql_injection'",
+      "generated_sql": "SELECT event_id, timestamp, source_ip, destination_ip, method, uri, query_string, user_agent, rule_id, rule_message, action, severity, payload, country FROM waf_events WHERE attack_type = 'SQLi' ORDER BY timestamp DESC",
+      "agent_explanation": "This query retrieves all SQL injection attacks detected by the Web Application Firewall. It filters the waf_events table for records where the attack_type field equals 'SQLi' (SQL injection). The results are ordered by timestamp in descending order to show the most recent attacks first. The query returns key details including the event identifier, when it occurred, source/destination IPs, HTTP request details (method, URI, query string), the WAF rule that triggered, the action taken, severity level, the malicious payload, and the country of origin.",
+      "agent_reasoning_steps": [
+        "Identified that the question asks for SQL injection attacks from the WAF",
+        "Located the waf_events table as the primary data source",
+        "Found the attack_type field which categorizes different attack types",
+        "Determined that 'SQLi' is the standard value for SQL injection attacks in the attack_type field",
+        "Selected relevant fields that provide comprehensive attack context",
+        "Added ORDER BY timestamp DESC to show most recent attacks first, which is typical for security monitoring",
+        "High confidence because the question is straightforward and the waf_events table has an explicit attack_type field designed for this exact use case"
+      ],
+      "correctness_score": 0.7,
+      "correctness_reasoning": "The generated query has the correct table (waf_events) and understands the task of filtering WAF events for SQL injection attacks. However, there is one significant issue: the attack_type filter uses 'SQLi' instead of 'sql_injection'. This is a critical semantic difference - unless 'SQLi' is a valid alternative value in the database schema for SQL injection attacks, this query will return an empty result set or wrong data. The query adds explicit column selection (which is acceptable and often better practice than SELECT *), and includes ORDER BY timestamp DESC (a reasonable enhancement for viewing recent attacks first). If 'SQLi' and 'sql_injection' are equivalent values in the database, the score would be 0.9, but assuming standard data conventions where the exact string matters, this is a significant filter value mismatch that would cause the query to fail its primary objective.",
+      "correctness_issues": [
+        "Filter value mismatch: uses 'SQLi' instead of 'sql_injection' for attack_type, which may not match any records in the database"
+      ],
+      "latency_ms": 9678.948879241943,
+      "total_tokens": 205,
+      "retrieval_precision": 1.0,
+      "retrieved_tables": [
+        "waf_events"
+      ],
+      "reference_tables": [
+        "waf_events"
+      ],
+      "complexity": "simple",
+      "category": "application",
+      "confidence": 0.95
+    },
+    {
+      "agent": "semantic",
+      "test_case_id": "test_med_001",
+      "question": "Show me all blocked outbound connections in the last 24 hours, sorted by source IP",
+      "reference_sql": "SELECT * FROM firewall_events WHERE action = 'deny' AND direction = 'outbound' AND timestamp >= NOW() - INTERVAL '24 hours' ORDER BY source_ip",
+      "generated_sql": "SELECT flow_id, timestamp, source_ip, source_port, destination_ip, destination_port, protocol, application, threat_detected, threat_name FROM network_traffic WHERE action = 'blocked' AND direction = 'outbound' AND timestamp >= NOW() - INTERVAL '24 hours' ORDER BY source_ip, timestamp DESC",
+      "agent_explanation": "This query retrieves all blocked outbound network connections from the last 24 hours. It filters the network_traffic table for records where the action is 'blocked' and the direction is 'outbound', limiting results to the past 24 hours using a timestamp comparison. Results are sorted by source IP address (alphabetically) and then by timestamp in descending order (most recent first within each source IP group).",
+      "agent_reasoning_steps": [
+        "Identified 'blocked outbound connections' maps to network_traffic table with action='blocked' and direction='outbound'",
+        "Determined 'last 24 hours' requires timestamp filter using NOW() - INTERVAL '24 hours'",
+        "Confirmed 'sorted by source IP' requires ORDER BY source_ip",
+        "Selected relevant fields including source/destination IPs, ports, protocol, and threat information",
+        "Added secondary sort by timestamp DESC to show most recent events first within each source IP",
+        "High confidence due to clear field mappings and straightforward query requirements"
+      ],
+      "correctness_score": 0.2,
+      "correctness_reasoning": "The generated SQL query has critical fundamental errors that make it incorrect for answering the question. Most importantly, it queries the wrong table ('network_traffic' instead of 'firewall_events'), which is a major semantic error. Additionally, it uses an incorrect filter value ('blocked' instead of 'deny' for the action field). While the query demonstrates understanding of some requirements (outbound direction, 24-hour time window, sorting by source_ip), these correct elements cannot compensate for querying the wrong data source entirely. The query also adds unnecessary complexity with explicit column selection and a secondary sort by timestamp DESC that wasn't requested. The table mismatch alone makes this query unable to return the correct results, as it would be searching in a completely different dataset than intended.",
+      "correctness_issues": [
+        "Queries wrong table: 'network_traffic' instead of 'firewall_events'",
+        "Uses incorrect action value: 'blocked' instead of 'deny'",
+        "Unnecessarily specifies individual columns instead of SELECT *",
+        "Adds unrequested secondary sort by timestamp DESC"
+      ],
+      "latency_ms": 9935.628175735474,
+      "total_tokens": 195,
+      "retrieval_precision": 0.0,
+      "retrieved_tables": [
+        "network_traffic"
+      ],
+      "reference_tables": [
+        "firewall_events"
+      ],
+      "complexity": "medium",
+      "category": "network",
+      "confidence": 0.95
+    },
+    {
+      "agent": "semantic",
+      "test_case_id": "test_med_002",
+      "question": "Which hostnames had the most high-severity endpoint events this week?",
+      "reference_sql": "SELECT hostname, COUNT(*) as event_count FROM endpoint_events WHERE severity IN ('high', 'critical') AND timestamp >= DATE_TRUNC('week', NOW()) GROUP BY hostname ORDER BY event_count DESC",
+      "generated_sql": "SELECT hostname, COUNT(*) as high_severity_events FROM endpoint_events WHERE severity = 'high' AND timestamp >= NOW() - INTERVAL '7 days' GROUP BY hostname ORDER BY high_severity_events DESC",
+      "agent_explanation": "This query identifies hostnames with the most high-severity endpoint events in the past week. It filters endpoint_events for 'high' severity events within the last 7 days, groups results by hostname, counts events per host, and orders them descending to show the hosts with the most events first.",
+      "agent_reasoning_steps": [
+        "Identified 'endpoint_events' as the primary table since question asks about endpoint events",
+        "Determined 'high-severity' maps to severity = 'high' (could also include 'critical' but question specifically says 'high')",
+        "Interpreted 'this week' as last 7 days using timestamp >= NOW() - INTERVAL '7 days'",
+        "Used GROUP BY hostname with COUNT(*) to aggregate events per host",
+        "Applied ORDER BY DESC to show hostnames with most events first",
+        "High confidence due to clear question mapping directly to available schema fields"
+      ],
+      "correctness_score": 0.7,
+      "correctness_reasoning": "The generated SQL has the correct overall structure and approach: it queries the right table (endpoint_events), groups by hostname, counts events, and orders results descending. However, there are two significant issues: (1) The severity filter only includes 'high' but excludes 'critical' events, which the reference includes via IN ('high', 'critical'). This is a meaningful semantic difference that could miss important data. (2) The time window uses 'NOW() - INTERVAL 7 days' instead of 'DATE_TRUNC(week, NOW())', which gives a rolling 7-day window rather than the current calendar week. While both interpretations of 'this week' could be reasonable, they produce different results and the reference is more aligned with standard 'week' semantics. The column alias difference (high_severity_events vs event_count) is cosmetic and doesn't affect correctness.",
+      "correctness_issues": [
+        "Missing 'critical' severity in the filter - only checks severity = 'high' instead of IN ('high', 'critical')",
+        "Uses rolling 7-day window (NOW() - INTERVAL '7 days') instead of calendar week (DATE_TRUNC('week', NOW())), which produces different time ranges"
+      ],
+      "latency_ms": 8761.48509979248,
+      "total_tokens": 138,
+      "retrieval_precision": 1.0,
+      "retrieved_tables": [
+        "endpoint_events"
+      ],
+      "reference_tables": [
+        "endpoint_events"
+      ],
+      "complexity": "medium",
+      "category": "endpoint",
+      "confidence": 0.95
+    },
+    {
+      "agent": "semantic",
+      "test_case_id": "test_med_003",
+      "question": "List all failed SSH authentication attempts grouped by username with counts",
+      "reference_sql": "SELECT user_name, COUNT(*) as failed_attempts FROM authentication_events WHERE event_type = 'ssh' AND status = 'failure' GROUP BY user_name ORDER BY failed_attempts DESC",
+      "generated_sql": "SELECT user_name, COUNT(*) as failed_attempts FROM authentication_events WHERE status = 'failure' AND protocol = 'SSH' GROUP BY user_name ORDER BY failed_attempts DESC",
+      "agent_explanation": "This query retrieves all failed SSH authentication attempts from the authentication_events table. It filters for records where the status is 'failure' and the protocol is 'SSH', then groups the results by username and counts the number of failed attempts for each user. The results are ordered by the count in descending order to show users with the most failed attempts first.",
+      "agent_reasoning_steps": [
+        "Identified that failed SSH authentication attempts are stored in the authentication_events table",
+        "Determined that 'status' field should be filtered for 'failure' to get failed attempts",
+        "Assumed 'protocol' field contains 'SSH' to identify SSH-specific attempts (though the schema shows protocols like Kerberos, NTLM, RADIUS, LDAP, SSH is a reasonable protocol value)",
+        "Used GROUP BY on user_name to aggregate attempts per user",
+        "Applied COUNT(*) to get the number of failed attempts for each username",
+        "Added ORDER BY to sort results by failed attempt count in descending order for better insights"
+      ],
+      "correctness_score": 0.7,
+      "correctness_reasoning": "The generated query has the correct structure and logic for grouping failed authentication attempts by username with counts, and includes proper ordering. However, there is one significant issue: the WHERE clause filters by 'protocol = SSH' instead of 'event_type = ssh'. This is a meaningful semantic difference - these are different column names that likely represent different aspects of the data model. While the generated query attempts to filter for SSH-related events, it uses the wrong column name, which could either produce incorrect results or fail to execute depending on the schema. The lowercase 'ssh' vs uppercase 'SSH' difference is also notable, though less critical if the comparison is case-insensitive. All other aspects (aggregation, grouping, ordering) are correct.",
+      "correctness_issues": [
+        "Uses 'protocol' column instead of 'event_type' column in WHERE clause",
+        "Uses 'SSH' (uppercase) instead of 'ssh' (lowercase) for the value comparison"
+      ],
+      "latency_ms": 8791.302919387817,
+      "total_tokens": 154,
+      "retrieval_precision": 1.0,
+      "retrieved_tables": [
+        "authentication_events"
+      ],
+      "reference_tables": [
+        "authentication_events"
+      ],
+      "complexity": "medium",
+      "category": "authentication",
+      "confidence": 0.85
+    },
+    {
+      "agent": "semantic",
+      "test_case_id": "test_med_004",
+      "question": "What are the top 10 most queried domains in the last hour?",
+      "reference_sql": "SELECT queried_domain, COUNT(*) as query_count FROM dns_queries WHERE timestamp >= NOW() - INTERVAL '1 hour' GROUP BY queried_domain ORDER BY query_count DESC LIMIT 10",
+      "generated_sql": "SELECT query_name, COUNT(*) as query_count FROM dns_queries WHERE timestamp >= NOW() - INTERVAL '1 hour' GROUP BY query_name ORDER BY query_count DESC LIMIT 10",
+      "agent_explanation": "This query retrieves the top 10 most frequently queried domain names from the dns_queries table within the last hour. It filters records to only include those from the past 60 minutes, groups them by domain name (query_name), counts occurrences of each domain, and returns the 10 domains with the highest query counts in descending order.",
+      "agent_reasoning_steps": [
+        "Identified that 'queried domains' refers to DNS queries, making dns_queries the primary table",
+        "Determined that 'query_name' field contains the domain names being queried",
+        "Applied time filter using 'timestamp >= NOW() - INTERVAL '1 hour'' to limit results to the last hour",
+        "Used GROUP BY on query_name to aggregate queries per domain",
+        "Applied COUNT(*) to determine frequency of each domain",
+        "Used ORDER BY query_count DESC to sort from most to least queried",
+        "Applied LIMIT 10 to return only the top 10 results"
+      ],
+      "correctness_score": 0.0,
+      "correctness_reasoning": "The generated SQL has a critical semantic error: it uses the wrong column name 'query_name' instead of 'queried_domain'. While the overall query structure is correct (proper time filtering, aggregation, ordering, and limit), selecting and grouping by a different column means it answers a fundamentally different question. If 'query_name' and 'queried_domain' are different columns in the schema, this query returns completely different results than requested. The question specifically asks for 'domains', and the reference uses 'queried_domain', so using 'query_name' is incorrect unless they are proven to be synonyms in this schema (which we cannot assume).",
+      "correctness_issues": [
+        "Wrong column name: uses 'query_name' instead of 'queried_domain' for both SELECT and GROUP BY",
+        "The query would return results for a different data field, not answering the original question about domains"
+      ],
+      "latency_ms": 8123.696088790894,
+      "total_tokens": 138,
+      "retrieval_precision": 1.0,
+      "retrieved_tables": [
+        "dns_queries"
+      ],
+      "reference_tables": [
+        "dns_queries"
+      ],
+      "complexity": "medium",
+      "category": "network",
+      "confidence": 0.95
+    },
+    {
+      "agent": "semantic",
+      "test_case_id": "test_med_005",
+      "question": "Show me all critical vulnerability findings discovered in the last 7 days by severity",
+      "reference_sql": "SELECT hostname, cve_id, cvss_score, vulnerability_name FROM vulnerability_scans WHERE severity = 'critical' AND timestamp >= NOW() - INTERVAL '7 days' ORDER BY cvss_score DESC",
+      "generated_sql": "SELECT scan_id, vulnerability_id, timestamp, hostname, ip_address, vulnerability_name, description, severity, cvss_score, cvss_vector, port, protocol, service, solution, exploitable, patch_available, status FROM vulnerability_scans WHERE severity = 'critical' AND timestamp >= NOW() - INTERVAL '7 days' ORDER BY timestamp DESC, cvss_score DESC",
+      "agent_explanation": "This query retrieves all critical severity vulnerability findings from the last 7 days. It filters the vulnerability_scans table for records with 'critical' severity and timestamps within the past week. Results are ordered by timestamp (most recent first) and then by CVSS score (highest first) to prioritize the most recent and severe vulnerabilities.",
+      "agent_reasoning_steps": [
+        "Identified that 'vulnerability findings' maps to the vulnerability_scans table",
+        "Recognized 'critical' as a severity level filter requiring WHERE severity = 'critical'",
+        "Interpreted 'last 7 days' as timestamp >= NOW() - INTERVAL '7 days'",
+        "Included all relevant vulnerability details in SELECT to provide comprehensive information",
+        "Applied ORDER BY timestamp DESC to show most recent discoveries first, with secondary sorting by cvss_score DESC to prioritize higher-risk vulnerabilities",
+        "High confidence due to clear question semantics and direct field mapping"
+      ],
+      "correctness_score": 0.85,
+      "correctness_reasoning": "The generated SQL correctly identifies the core requirements: it queries the right table (vulnerability_scans), applies the correct severity filter ('critical'), uses the proper time window (last 7 days with NOW() - INTERVAL '7 days'), and orders results appropriately. The query is semantically correct and would successfully answer the question. However, there are notable differences from the reference: (1) It selects significantly more columns than necessary (17 vs 4), including many fields not requested in the question like scan_id, vulnerability_id, ip_address, description, cvss_vector, port, protocol, service, solution, exploitable, patch_available, and status. (2) The ordering differs - it primarily orders by timestamp DESC then cvss_score DESC, whereas the reference orders solely by cvss_score DESC. While ordering by timestamp first is reasonable for 'last 7 days' findings, the question specifically asks to show findings 'by severity', which the reference interprets as ordering by cvss_score. These are functional differences but don't fundamentally break the query's ability to answer the question - it's more verbose and uses a different (but defensible) sort order.",
+      "correctness_issues": [
+        "Selects 13 extra columns beyond what's needed (scan_id, vulnerability_id, ip_address, description, cvss_vector, port, protocol, service, solution, exploitable, patch_available, status, cve_id)",
+        "Orders by timestamp DESC first, then cvss_score DESC, whereas reference orders only by cvss_score DESC - the question asks for results 'by severity' which better aligns with sorting by cvss_score as primary key"
+      ],
+      "latency_ms": 9866.190195083618,
+      "total_tokens": 194,
+      "retrieval_precision": 1.0,
+      "retrieved_tables": [
+        "vulnerability_scans"
+      ],
+      "reference_tables": [
+        "vulnerability_scans"
+      ],
+      "complexity": "medium",
+      "category": "vulnerability",
+      "confidence": 0.95
+    },
+    {
+      "agent": "semantic",
+      "test_case_id": "test_med_006",
+      "question": "Which users accessed the most sensitive files this month according to DLP?",
+      "reference_sql": "SELECT user_name, COUNT(*) as access_count FROM dlp_events WHERE policy_name ILIKE '%sensitive%' AND timestamp >= DATE_TRUNC('month', NOW()) GROUP BY user_name ORDER BY access_count DESC",
+      "generated_sql": "SELECT user_name, COUNT(DISTINCT event_id) AS access_count, COUNT(DISTINCT file_name) AS unique_files_accessed, SUM(matches_count) AS total_policy_matches, STRING_AGG(DISTINCT data_type, ', ') AS sensitive_data_types FROM dlp_events WHERE timestamp >= DATE_TRUNC('month', CURRENT_TIMESTAMP) AND severity IN ('high', 'critical') GROUP BY user_name ORDER BY access_count DESC, total_policy_matches DESC LIMIT 20",
+      "agent_explanation": "This query identifies users who accessed the most sensitive files in the current month according to DLP events. It filters for high and critical severity DLP events from the current month, groups by user, and counts distinct events and files accessed. The query also aggregates the total policy matches and lists the types of sensitive data accessed. Results are ordered by access count (descending) to show the users with the most sensitive file access, with a limit of 20 users.",
+      "agent_reasoning_steps": [
+        "Identified 'dlp_events' as the primary table since the question specifically asks about DLP-detected sensitive file access",
+        "Interpreted 'this month' as the current calendar month using DATE_TRUNC('month', CURRENT_TIMESTAMP)",
+        "Defined 'most sensitive files' as those triggering high or critical severity DLP policies, as these represent the most sensitive data classifications",
+        "Grouped by user_name to aggregate access patterns per user",
+        "Counted distinct event_ids to measure access frequency",
+        "Counted distinct file_names to show variety of sensitive files accessed",
+        "Summed matches_count to indicate the volume of policy violations",
+        "Included STRING_AGG of data_types to show what kinds of sensitive data (PII, PHI, PCI, IP) each user accessed",
+        "Ordered by access_count primarily, with total_policy_matches as secondary sort to prioritize users with highest access frequency",
+        "Applied LIMIT 20 to return top users for practical analysis"
+      ],
+      "correctness_score": 0.6,
+      "correctness_reasoning": "The generated query takes a fundamentally different approach to identifying 'most sensitive files' than the reference. While the reference uses policy_name ILIKE '%sensitive%' to filter for sensitive file access, the generated query uses severity IN ('high', 'critical'). These are related but distinct filtering strategies - severity indicates event criticality while policy name indicates file sensitivity. The generated query adds useful analytics (unique files, policy matches, data types) and includes a LIMIT 20, but these are enhancements rather than core requirements. The main issue is the filtering criterion mismatch: severity-based filtering may capture different events than policy-name-based filtering, potentially missing sensitive file accesses that don't have high/critical severity or including non-sensitive events with high severity. The query structure is otherwise sound with correct table selection, proper timestamp filtering (using CURRENT_TIMESTAMP vs NOW() is equivalent), appropriate grouping, and ordering. The COUNT(DISTINCT event_id) is more precise than COUNT(*) but functionally similar for this use case.",
+      "correctness_issues": [
+        "Uses severity IN ('high', 'critical') instead of policy_name ILIKE '%sensitive%' - different interpretation of 'most sensitive files'",
+        "Adds LIMIT 20 which wasn't in the reference (minor enhancement, not necessarily wrong)",
+        "Counts DISTINCT event_id instead of all rows (more precise but changes semantics slightly)",
+        "Adds extra analytical columns not required by the question (not an error, but deviates from reference)"
+      ],
+      "latency_ms": 12689.888000488281,
+      "total_tokens": 240,
+      "retrieval_precision": 1.0,
+      "retrieved_tables": [
+        "dlp_events"
+      ],
+      "reference_tables": [
+        "dlp_events"
+      ],
+      "complexity": "medium",
+      "category": "dlp",
+      "confidence": 0.85
+    },
+    {
+      "agent": "semantic",
+      "test_case_id": "test_med_007",
+      "question": "Show all cloud resource changes made by users in production environments today",
+      "reference_sql": "SELECT * FROM cloud_resource_changes WHERE user_name IS NOT NULL AND environment = 'production' AND timestamp >= DATE_TRUNC('day', NOW()) ORDER BY timestamp DESC",
+      "generated_sql": "SELECT change_id, timestamp, cloud_provider, account_id, resource_id, resource_type, resource_name, change_type, changed_by, change_source, compliance_status FROM cloud_resource_changes WHERE changed_by IS NOT NULL AND changed_by != 'system' AND changed_by != 'automated' AND (tags LIKE '%production%' OR tags LIKE '%prod%' OR resource_name LIKE '%production%' OR resource_name LIKE '%prod%') AND DATE(timestamp) = CURRENT_DATE ORDER BY timestamp DESC",
+      "agent_explanation": "This query retrieves all cloud resource changes made today in production environments by filtering for: (1) changes with a non-null changed_by field to ensure user-initiated actions, (2) exclusion of system/automated users to focus on human users, (3) production environment identification through tags or resource names containing 'production' or 'prod', and (4) changes occurring today using CURRENT_DATE. Results are ordered by timestamp descending to show most recent changes first.",
+      "agent_reasoning_steps": [
+        "Identified cloud_resource_changes as the primary table containing cloud infrastructure changes",
+        "Determined 'changed_by' field tracks the user making changes",
+        "Applied filter for today's date using DATE(timestamp) = CURRENT_DATE",
+        "Assumed 'production' environment identification through tags (JSON field) or resource_name patterns since no explicit environment field exists",
+        "Added filters to exclude system/automated changes to focus on user-initiated actions",
+        "Included relevant fields for comprehensive change tracking",
+        "Ordered by timestamp DESC to show most recent changes first",
+        "Confidence reduced to 0.75 due to assumptions about production environment identification method - may need adjustment based on actual tagging conventions"
+      ],
+      "correctness_score": 0.3,
+      "correctness_reasoning": "The generated SQL attempts to answer the question but has significant logical differences from the reference query that make it incorrect: (1) It uses 'changed_by' instead of 'user_name' for filtering users - while semantically similar, this is a different column that may contain different data; (2) It adds extra filters like '!= system' and '!= automated' which are not in the reference and may incorrectly exclude valid user changes; (3) Most critically, it uses pattern matching on tags and resource_name fields to identify production environments instead of checking a dedicated 'environment' column - this is unreliable and will miss resources where the environment column is 'production' but tags/names don't contain that string, or incorrectly include non-production resources that happen to have 'prod' in their name; (4) It uses DATE(timestamp) = CURRENT_DATE instead of timestamp >= DATE_TRUNC('day', NOW()), which while functionally equivalent for 'today', is a different approach; (5) It explicitly lists columns instead of SELECT *, which is acceptable but different. The core issue is that inferring environment from text patterns rather than using a dedicated column is fundamentally wrong and will produce incorrect results.",
+      "correctness_issues": [
+        "Uses 'changed_by' column instead of 'user_name' - different column that may not match the schema",
+        "Adds exclusion filters for 'system' and 'automated' that are not in the reference specification",
+        "Uses unreliable pattern matching (LIKE '%production%' OR LIKE '%prod%') on tags and resource_name instead of checking the 'environment' column directly",
+        "The environment detection logic will miss production resources without 'prod' in tags/names and may incorrectly include non-production resources",
+        "Explicitly lists columns instead of SELECT * (minor difference)"
+      ],
+      "latency_ms": 12521.05188369751,
+      "total_tokens": 253,
+      "retrieval_precision": 1.0,
+      "retrieved_tables": [
+        "cloud_resource_changes"
+      ],
+      "reference_tables": [
+        "cloud_resource_changes"
+      ],
+      "complexity": "medium",
+      "category": "cloud",
+      "confidence": 0.75
+    },
+    {
+      "agent": "semantic",
+      "test_case_id": "test_med_008",
+      "question": "What are the top 5 blocked URLs by the WAF in the past week?",
+      "reference_sql": "SELECT url, COUNT(*) as block_count FROM waf_events WHERE action = 'block' AND timestamp >= NOW() - INTERVAL '7 days' GROUP BY url ORDER BY block_count DESC LIMIT 5",
+      "generated_sql": "SELECT uri, COUNT(*) as block_count FROM waf_events WHERE action = 'block' AND timestamp >= NOW() - INTERVAL '7 days' GROUP BY uri ORDER BY block_count DESC LIMIT 5",
+      "agent_explanation": "This query retrieves the top 5 most frequently blocked URLs from the WAF events table in the past week. It filters for blocked actions, groups by the URI field to count occurrences, orders by the count in descending order, and limits to the top 5 results.",
+      "agent_reasoning_steps": [
+        "Identified that WAF events are stored in the waf_events table",
+        "The 'action' field contains the WAF decision (block, allow, challenge), so filtering for action = 'block' captures blocked requests",
+        "The 'uri' field represents the requested URL/path that was blocked",
+        "Used timestamp field with 7-day interval to filter for 'past week'",
+        "Grouped by uri to aggregate multiple blocks of the same URL",
+        "Ordered by count descending to get most frequently blocked first",
+        "Applied LIMIT 5 to get top 5 results as requested"
+      ],
+      "correctness_score": 0.9,
+      "correctness_reasoning": "The generated SQL is semantically correct and will produce the right results. The only difference is the use of 'uri' instead of 'url' as the column name. Both queries have identical logic: they filter for blocked actions in the past 7 days, group by the URL/URI column, count occurrences, order by count descending, and limit to 5 results. The column name difference ('uri' vs 'url') is a minor cosmetic issue that doesn't affect the correctness of the approach - both refer to the same concept and would work if the actual database schema uses 'uri'. All other elements (table, action filter, time window, aggregation, ordering, and limit) are identical to the reference.",
+      "correctness_issues": [
+        "Uses column name 'uri' instead of 'url' - this may be acceptable depending on actual schema, but differs from reference"
+      ],
+      "latency_ms": 9805.379152297974,
+      "total_tokens": 119,
+      "retrieval_precision": 1.0,
+      "retrieved_tables": [
+        "waf_events"
+      ],
+      "reference_tables": [
+        "waf_events"
+      ],
+      "complexity": "medium",
+      "category": "application",
+      "confidence": 0.95
+    },
+    {
+      "agent": "semantic",
+      "test_case_id": "test_med_009",
+      "question": "List all email messages with malware attachments received in the last 3 days",
+      "reference_sql": "SELECT * FROM email_events WHERE direction = 'inbound' AND threat_type = 'malware' AND timestamp >= NOW() - INTERVAL '3 days' ORDER BY timestamp DESC",
+      "generated_sql": "SELECT message_id, timestamp, sender_email, sender_domain, subject, attachment_count, attachment_names, attachment_hashes, action_taken FROM email_events WHERE threat_type = 'malware' AND timestamp >= NOW() - INTERVAL '3 days' ORDER BY timestamp DESC",
+      "agent_explanation": "This query retrieves all email messages that contain malware attachments received in the last 3 days. It filters the email_events table for records where the threat_type is 'malware' and the timestamp is within the last 72 hours. The results are ordered by timestamp in descending order to show the most recent emails first. The query returns key details including message ID, timestamp, sender information, subject, attachment details, and the action taken by the email security system.",
+      "agent_reasoning_steps": [
+        "Identified that email_events table contains email security data including threat detection",
+        "The threat_type field specifically identifies malware threats in email messages",
+        "Attachment-related fields (attachment_count, attachment_names, attachment_hashes) are available to show malware attachment details",
+        "Used timestamp field with INTERVAL '3 days' to filter for emails received in the last 3 days",
+        "Included relevant fields like sender information, subject, and action_taken to provide comprehensive context",
+        "Added ORDER BY timestamp DESC to show most recent malware emails first",
+        "High confidence because the question maps directly to available fields with no ambiguity"
+      ],
+      "correctness_score": 0.7,
+      "correctness_reasoning": "The generated SQL correctly identifies the core requirements: it queries the right table (email_events), uses the correct threat_type filter ('malware'), applies the proper time window (last 3 days), and includes appropriate ordering (timestamp DESC). However, it has one significant omission: it lacks the direction = 'inbound' filter that is present in the reference query. The question specifically asks for 'received' email messages, which implies inbound direction. Without this filter, the query would also return outbound emails with malware attachments, which doesn't match the question's intent. The generated query explicitly lists columns instead of using SELECT *, which is actually a better practice in production code, but this is a cosmetic difference that doesn't affect correctness. The missing direction filter is a meaningful logical gap that could return incorrect results.",
+      "correctness_issues": [
+        "Missing direction = 'inbound' filter - query will return both inbound and outbound emails instead of only received (inbound) messages"
+      ],
+      "latency_ms": 9346.989870071411,
+      "total_tokens": 202,
+      "retrieval_precision": 1.0,
+      "retrieved_tables": [
+        "email_events"
+      ],
+      "reference_tables": [
+        "email_events"
+      ],
+      "complexity": "medium",
+      "category": "email",
+      "confidence": 0.95
+    },
+    {
+      "agent": "semantic",
+      "test_case_id": "test_com_001",
+      "question": "Show me all endpoints that executed suspicious processes and then had outbound connections to domains flagged in our threat intelligence within the same hour",
+      "reference_sql": "SELECT DISTINCT pe.hostname, pe.process_name, pe.command_line, nt.destination_ip, nt.destination_domain, ti.threat_type, ti.confidence_score FROM process_execution pe JOIN network_traffic nt ON pe.hostname = nt.source_hostname AND nt.timestamp BETWEEN pe.timestamp AND pe.timestamp + INTERVAL '1 hour' JOIN threat_intelligence ti ON nt.destination_domain = ti.indicator_value WHERE ti.indicator_type = 'domain' AND pe.process_name IN ('powershell.exe', 'cmd.exe', 'wscript.exe', 'cscript.exe', 'mshta.exe') AND pe.timestamp >= NOW() - INTERVAL '7 days' ORDER BY pe.timestamp DESC",
+      "generated_sql": "SELECT DISTINCT ee.hostname, ee.ip_address, ee.process_name, ee.command_line, ee.timestamp AS process_timestamp, nt.destination_hostname, nt.destination_ip, nt.timestamp AS connection_timestamp, ti.indicator_value AS flagged_domain, ti.threat_type, ti.confidence_score FROM endpoint_events ee INNER JOIN network_traffic nt ON ee.hostname = nt.source_hostname AND nt.direction = 'outbound' AND nt.timestamp BETWEEN ee.timestamp AND ee.timestamp + INTERVAL '1 hour' INNER JOIN threat_intelligence ti ON (nt.destination_hostname = ti.indicator_value OR nt.destination_ip = ti.indicator_value) AND ti.indicator_type IN ('domain', 'ip') AND ti.active = true WHERE ee.event_type = 'process' AND (ee.is_suspicious = true OR ee.threat_category IS NOT NULL OR ee.severity IN ('high', 'critical')) AND ee.timestamp >= NOW() - INTERVAL '7 days' ORDER BY ee.timestamp DESC",
+      "agent_explanation": "This query identifies endpoints that executed suspicious processes followed by outbound network connections to threat intelligence flagged domains within the same hour. It joins three tables: endpoint_events for suspicious process execution, network_traffic for outbound connections, and threat_intelligence for flagged indicators. The time-based join ensures connections occurred within 1 hour after the process started. It filters for process events marked as suspicious or high severity, outbound traffic only, and active threat intel indicators of type domain or IP. Results are ordered by process execution time to show the attack sequence chronologically.",
+      "agent_reasoning_steps": [
+        "Identified three key components: suspicious process execution (endpoint_events), outbound connections (network_traffic), and threat intel flagged domains (threat_intelligence)",
+        "Determined join strategy: endpoint hostname to network source hostname, with time constraint of 1 hour window",
+        "Added join to threat_intelligence matching destination hostname or IP against indicator values",
+        "Applied filters: process event type, suspicious indicators (is_suspicious flag or threat_category or high/critical severity), outbound direction, active threat intel",
+        "Included both domain and IP indicator types since connections could match either",
+        "Added 7-day lookback window for performance (configurable based on requirements)",
+        "Selected relevant fields showing the attack chain: endpoint, process details, connection details, and threat intel match"
+      ],
+      "correctness_score": 0.4,
+      "correctness_reasoning": "The generated SQL has the right general approach (joins between process/endpoint data, network traffic, and threat intelligence with time-based correlation) but has several significant issues that prevent it from correctly answering the question. Major problems: (1) Uses wrong table 'endpoint_events' instead of 'process_execution' - these may have different schemas and data; (2) Attempts to join on destination_ip in addition to destination_domain for threat intelligence, which could return false positives not asked for in the question; (3) Uses a complex suspicious process detection mechanism (is_suspicious, threat_category, severity) instead of the explicit process name list in the reference, which may not accurately identify 'suspicious processes' as defined by the business logic; (4) Missing key columns from output (destination_domain from network_traffic is replaced with destination_hostname which may be different); (5) Adds unnecessary filtering criteria like 'nt.direction = outbound' and 'ti.active = true' which may be reasonable but deviate from the reference specification. The time-window correlation logic is correct, and the ordering/time filtering is appropriate, but the fundamental table and filtering differences mean this query likely returns different results than intended.",
+      "correctness_issues": [
+        "Uses 'endpoint_events' table instead of 'process_execution' - wrong data source",
+        "Defines suspicious processes using fields like 'is_suspicious' and 'severity' instead of explicit process name whitelist ('powershell.exe', 'cmd.exe', etc.)",
+        "Joins threat intelligence on both destination_hostname and destination_ip, but question specifically asks for 'domains flagged', not IPs",
+        "Missing 'destination_domain' from network_traffic in SELECT (uses destination_hostname instead)",
+        "Adds extra filtering conditions (nt.direction = 'outbound', ti.active = true) not in reference",
+        "Includes extra columns (ip_address, process_timestamp, connection_timestamp) that aren't wrong but add noise"
+      ],
+      "latency_ms": 15992.491006851196,
+      "total_tokens": 419,
+      "retrieval_precision": 0.6666666666666666,
+      "retrieved_tables": [
+        "threat_intelligence",
+        "network_traffic",
+        "endpoint_events"
+      ],
+      "reference_tables": [
+        "process_execution",
+        "network_traffic",
+        "threat_intelligence"
+      ],
+      "complexity": "complex",
+      "category": "endpoint",
+      "confidence": 0.85
+    },
+    {
+      "agent": "semantic",
+      "test_case_id": "test_com_003",
+      "question": "Which cloud resources were created or modified by users whose endpoints later triggered high-severity security alerts involving file encryption or ransomware activity",
+      "reference_sql": "SELECT DISTINCT crc.cloud_provider, crc.account_id, crc.resource_type, crc.resource_id, crc.change_type, crc.user_name, crc.timestamp as change_timestamp, sa.alert_name, sa.severity, sa.detection_timestamp, ee.event_type as endpoint_event FROM cloud_resource_changes crc JOIN security_alerts sa ON crc.user_name = sa.user_name AND sa.detection_timestamp >= crc.timestamp AND sa.detection_timestamp <= crc.timestamp + INTERVAL '72 hours' JOIN endpoint_events ee ON sa.hostname = ee.hostname AND ee.timestamp BETWEEN sa.detection_timestamp - INTERVAL '1 hour' AND sa.detection_timestamp WHERE sa.severity IN ('high', 'critical') AND (sa.alert_name ILIKE '%ransomware%' OR sa.alert_name ILIKE '%encryption%' OR ee.event_type ILIKE '%file_encryption%') AND crc.timestamp >= NOW() - INTERVAL '30 days' ORDER BY crc.timestamp DESC",
+      "generated_sql": "SELECT DISTINCT cr.change_id, cr.timestamp AS change_timestamp, cr.cloud_provider, cr.account_id, cr.resource_id, cr.resource_type, cr.resource_name, cr.change_type, cr.changed_by, cr.change_source, sa.alert_id, sa.timestamp AS alert_timestamp, sa.alert_name, sa.severity, sa.description, ee.event_id, ee.hostname, ee.threat_name, ee.threat_category FROM cloud_resource_changes cr JOIN endpoint_events ee ON cr.changed_by = ee.user_name JOIN security_alerts sa ON JSON_CONTAINS(sa.affected_users, JSON_QUOTE(ee.user_name)) OR JSON_CONTAINS(sa.affected_assets, JSON_QUOTE(ee.hostname)) WHERE cr.change_type IN ('create', 'update') AND sa.severity IN ('high', 'critical') AND (ee.threat_category LIKE '%ransomware%' OR ee.threat_category LIKE '%encryption%' OR ee.threat_name LIKE '%ransomware%' OR ee.threat_name LIKE '%encryption%' OR sa.alert_name LIKE '%ransomware%' OR sa.alert_name LIKE '%encryption%' OR sa.description LIKE '%ransomware%' OR sa.description LIKE '%file encryption%') AND cr.timestamp < sa.timestamp ORDER BY cr.timestamp DESC",
+      "agent_explanation": "This query identifies cloud resources (created or modified) by users whose endpoints later triggered high-severity security alerts related to file encryption or ransomware. It joins cloud_resource_changes with endpoint_events on the user_name field, then connects to security_alerts to find high-severity alerts affecting those users or their endpoints. The query filters for create/update operations, high/critical severity alerts, and ransomware/encryption indicators across threat names, categories, and alert descriptions. The timestamp condition ensures the cloud changes occurred before the security alerts, establishing the temporal sequence requested.",
+      "agent_reasoning_steps": [
+        "Identify that we need cloud resource changes (create/modify operations) from cloud_resource_changes table",
+        "Connect users who made cloud changes to endpoint security events via user_name field",
+        "Find high-severity alerts associated with those users/endpoints through security_alerts table",
+        "Filter for ransomware and file encryption indicators across multiple fields (threat_name, threat_category, alert_name, description)",
+        "Ensure temporal logic: cloud changes must occur BEFORE the security alerts (cr.timestamp < sa.timestamp)",
+        "Use JSON_CONTAINS for matching users/assets in the affected_users and affected_assets JSON arrays in security_alerts",
+        "Filter for only 'create' and 'update' change types and 'high'/'critical' severity levels",
+        "Order by change timestamp to show chronological sequence of events"
+      ],
+      "correctness_score": 0.4,
+      "correctness_reasoning": "The generated SQL attempts to address the question but has several significant issues that prevent it from correctly answering it. The core problem is the join logic and temporal relationships. The reference SQL correctly joins cloud_resource_changes to security_alerts by user_name with temporal constraints (alerts occur within 72 hours after changes), then joins to endpoint_events to verify ransomware/encryption activity at the endpoint level. The generated SQL has fundamental flaws: (1) It joins cloud_resource_changes to endpoint_events first on changed_by=user_name, which doesn't establish the correct relationship since endpoint events should be linked via hostname from security_alerts, not directly from resource changes; (2) The security_alerts join uses JSON_CONTAINS on affected_users/affected_assets which is a different schema assumption and doesn't match the reference's direct user_name join; (3) The temporal constraint 'cr.timestamp < sa.timestamp' is too loose - it doesn't ensure alerts happen soon after changes (no 72-hour window) and doesn't verify endpoint events occur around alert time; (4) Missing the critical constraint that endpoint events should occur near the detection_timestamp (within 1 hour before); (5) Uses 'changed_by' instead of 'user_name' column and checks change_type IN ('create','update') which wasn't in reference; (6) No 30-day lookback constraint. The query gets credit for using the right tables, attempting temporal ordering, and checking for ransomware/encryption keywords across multiple fields, but the join logic and temporal relationships are fundamentally incorrect.",
+      "correctness_issues": [
+        "Incorrect join logic: joins cloud_resource_changes directly to endpoint_events instead of going through security_alerts first",
+        "Uses JSON_CONTAINS for security_alerts join instead of direct user_name match as in reference",
+        "Missing temporal constraint that endpoint events must occur within 1 hour before alert detection",
+        "Temporal constraint 'cr.timestamp < sa.timestamp' is too loose - missing the 72-hour window requirement",
+        "Missing 30-day lookback filter on cloud_resource_changes timestamp",
+        "Uses 'changed_by' column instead of 'user_name'",
+        "Adds unnecessary change_type filter not in reference",
+        "Doesn't properly verify that endpoint triggered the alert - missing the hostname-to-hostname join from reference"
+      ],
+      "latency_ms": 15981.752157211304,
+      "total_tokens": 467,
+      "retrieval_precision": 1.0,
+      "retrieved_tables": [
+        "security_alerts",
+        "cloud_resource_changes",
+        "endpoint_events"
+      ],
+      "reference_tables": [
+        "cloud_resource_changes",
+        "security_alerts",
+        "endpoint_events"
+      ],
+      "complexity": "complex",
+      "category": "cloud",
+      "confidence": 0.75
+    }
+  ],
+  "summary": {
+    "keyword": {
+      "overall": {
+        "avg_correctness": 0.6,
+        "avg_latency_ms": 9915.653115227109,
+        "avg_input_tokens": 0.0,
+        "avg_output_tokens": 0.0,
+        "avg_total_tokens": 194.61904761904762,
+        "avg_retrieval_precision": 0.8015873015873015,
+        "syntax_valid_rate": 0.0
+      },
+      "by_complexity": {
+        "simple": {
+          "avg_correctness": 0.7150000000000001,
+          "avg_latency_ms": 9498.38981628418,
+          "avg_input_tokens": 0.0,
+          "avg_output_tokens": 0.0,
+          "avg_total_tokens": 171.1,
+          "avg_retrieval_precision": 0.85,
+          "syntax_valid_rate": 0.0
+        },
+        "medium": {
+          "avg_correctness": 0.49444444444444446,
+          "avg_latency_ms": 9293.02536116706,
+          "avg_input_tokens": 0.0,
+          "avg_output_tokens": 0.0,
+          "avg_total_tokens": 178.88888888888889,
+          "avg_retrieval_precision": 0.7777777777777778,
+          "syntax_valid_rate": 0.0
+        },
+        "complex": {
+          "avg_correctness": 0.5,
+          "avg_latency_ms": 14803.794503211975,
+          "avg_input_tokens": 0.0,
+          "avg_output_tokens": 0.0,
+          "avg_total_tokens": 383.0,
+          "avg_retrieval_precision": 0.6666666666666666,
+          "syntax_valid_rate": 0.0
+        }
+      },
+      "by_category": {
+        "vulnerability": {
+          "avg_correctness": 0.85,
+          "avg_latency_ms": 10198.111653327942,
+          "avg_input_tokens": 0.0,
+          "avg_output_tokens": 0.0,
+          "avg_total_tokens": 204.0,
+          "avg_retrieval_precision": 0.75,
+          "syntax_valid_rate": 0.0
+        },
+        "endpoint": {
+          "avg_correctness": 0.8,
+          "avg_latency_ms": 9759.979724884033,
+          "avg_input_tokens": 0.0,
+          "avg_output_tokens": 0.0,
+          "avg_total_tokens": 193.75,
+          "avg_retrieval_precision": 0.9166666666666666,
+          "syntax_valid_rate": 0.0
+        },
+        "authentication": {
+          "avg_correctness": 0.8,
+          "avg_latency_ms": 8985.323429107666,
+          "avg_input_tokens": 0.0,
+          "avg_output_tokens": 0.0,
+          "avg_total_tokens": 163.0,
+          "avg_retrieval_precision": 1.0,
+          "syntax_valid_rate": 0.0
+        },
+        "network": {
+          "avg_correctness": 0.13333333333333333,
+          "avg_latency_ms": 8769.49938138326,
+          "avg_input_tokens": 0.0,
+          "avg_output_tokens": 0.0,
+          "avg_total_tokens": 138.0,
+          "avg_retrieval_precision": 0.3333333333333333,
+          "syntax_valid_rate": 0.0
+        },
+        "cloud": {
+          "avg_correctness": 0.4333333333333333,
+          "avg_latency_ms": 12285.019000371298,
+          "avg_input_tokens": 0.0,
+          "avg_output_tokens": 0.0,
+          "avg_total_tokens": 287.6666666666667,
+          "avg_retrieval_precision": 0.8888888888888888,
+          "syntax_valid_rate": 0.0
+        },
+        "application": {
+          "avg_correctness": 0.5,
+          "avg_latency_ms": 9200.051546096802,
+          "avg_input_tokens": 0.0,
+          "avg_output_tokens": 0.0,
+          "avg_total_tokens": 157.0,
+          "avg_retrieval_precision": 0.5,
+          "syntax_valid_rate": 0.0
+        },
+        "email": {
+          "avg_correctness": 0.7749999999999999,
+          "avg_latency_ms": 9924.639463424683,
+          "avg_input_tokens": 0.0,
+          "avg_output_tokens": 0.0,
+          "avg_total_tokens": 203.5,
+          "avg_retrieval_precision": 1.0,
+          "syntax_valid_rate": 0.0
+        },
+        "dlp": {
+          "avg_correctness": 0.5,
+          "avg_latency_ms": 9910.328030586243,
+          "avg_input_tokens": 0.0,
+          "avg_output_tokens": 0.0,
+          "avg_total_tokens": 208.0,
+          "avg_retrieval_precision": 1.0,
+          "syntax_valid_rate": 0.0
+        },
+        "security_ops": {
+          "avg_correctness": 0.85,
+          "avg_latency_ms": 9588.333129882812,
+          "avg_input_tokens": 0.0,
+          "avg_output_tokens": 0.0,
+          "avg_total_tokens": 164.0,
+          "avg_retrieval_precision": 1.0,
+          "syntax_valid_rate": 0.0
+        }
+      }
+    },
+    "semantic": {
+      "overall": {
+        "avg_correctness": 0.6333333333333334,
+        "avg_latency_ms": 10611.574638457525,
+        "avg_input_tokens": 0.0,
+        "avg_output_tokens": 0.0,
+        "avg_total_tokens": 208.71428571428572,
+        "avg_retrieval_precision": 0.9365079365079365,
+        "syntax_valid_rate": 0.0
+      },
+      "by_complexity": {
+        "simple": {
+          "avg_correctness": 0.755,
+          "avg_latency_ms": 10102.721285820007,
+          "avg_input_tokens": 0.0,
+          "avg_output_tokens": 0.0,
+          "avg_total_tokens": 186.4,
+          "avg_retrieval_precision": 1.0,
+          "syntax_valid_rate": 0.0
+        },
+        "medium": {
+          "avg_correctness": 0.55,
+          "avg_latency_ms": 9982.401265038385,
+          "avg_input_tokens": 0.0,
+          "avg_output_tokens": 0.0,
+          "avg_total_tokens": 181.44444444444446,
+          "avg_retrieval_precision": 0.8888888888888888,
+          "syntax_valid_rate": 0.0
+        },
+        "complex": {
+          "avg_correctness": 0.4,
+          "avg_latency_ms": 15987.12158203125,
+          "avg_input_tokens": 0.0,
+          "avg_output_tokens": 0.0,
+          "avg_total_tokens": 443.0,
+          "avg_retrieval_precision": 0.8333333333333333,
+          "syntax_valid_rate": 0.0
+        }
+      },
+      "by_category": {
+        "vulnerability": {
+          "avg_correctness": 0.875,
+          "avg_latency_ms": 11933.064579963684,
+          "avg_input_tokens": 0.0,
+          "avg_output_tokens": 0.0,
+          "avg_total_tokens": 227.0,
+          "avg_retrieval_precision": 1.0,
+          "syntax_valid_rate": 0.0
+        },
+        "endpoint": {
+          "avg_correctness": 0.725,
+          "avg_latency_ms": 10962.86141872406,
+          "avg_input_tokens": 0.0,
+          "avg_output_tokens": 0.0,
+          "avg_total_tokens": 211.5,
+          "avg_retrieval_precision": 0.9166666666666666,
+          "syntax_valid_rate": 0.0
+        },
+        "authentication": {
+          "avg_correctness": 0.8,
+          "avg_latency_ms": 9258.172512054443,
+          "avg_input_tokens": 0.0,
+          "avg_output_tokens": 0.0,
+          "avg_total_tokens": 179.5,
+          "avg_retrieval_precision": 1.0,
+          "syntax_valid_rate": 0.0
+        },
+        "network": {
+          "avg_correctness": 0.3666666666666667,
+          "avg_latency_ms": 9534.97083981832,
+          "avg_input_tokens": 0.0,
+          "avg_output_tokens": 0.0,
+          "avg_total_tokens": 152.33333333333334,
+          "avg_retrieval_precision": 0.6666666666666666,
+          "syntax_valid_rate": 0.0
+        },
+        "cloud": {
+          "avg_correctness": 0.39999999999999997,
+          "avg_latency_ms": 12820.531368255615,
+          "avg_input_tokens": 0.0,
+          "avg_output_tokens": 0.0,
+          "avg_total_tokens": 300.0,
+          "avg_retrieval_precision": 1.0,
+          "syntax_valid_rate": 0.0
+        },
+        "application": {
+          "avg_correctness": 0.8,
+          "avg_latency_ms": 9742.164015769958,
+          "avg_input_tokens": 0.0,
+          "avg_output_tokens": 0.0,
+          "avg_total_tokens": 162.0,
+          "avg_retrieval_precision": 1.0,
+          "syntax_valid_rate": 0.0
+        },
+        "email": {
+          "avg_correctness": 0.7,
+          "avg_latency_ms": 9504.8109292984,
+          "avg_input_tokens": 0.0,
+          "avg_output_tokens": 0.0,
+          "avg_total_tokens": 202.5,
+          "avg_retrieval_precision": 1.0,
+          "syntax_valid_rate": 0.0
+        },
+        "dlp": {
+          "avg_correctness": 0.44999999999999996,
+          "avg_latency_ms": 10621.685028076172,
+          "avg_input_tokens": 0.0,
+          "avg_output_tokens": 0.0,
+          "avg_total_tokens": 208.5,
+          "avg_retrieval_precision": 1.0,
+          "syntax_valid_rate": 0.0
+        },
+        "security_ops": {
+          "avg_correctness": 0.85,
+          "avg_latency_ms": 9805.320978164673,
+          "avg_input_tokens": 0.0,
+          "avg_output_tokens": 0.0,
+          "avg_total_tokens": 221.0,
+          "avg_retrieval_precision": 1.0,
+          "syntax_valid_rate": 0.0
+        }
+      }
+    }
+  }
+}

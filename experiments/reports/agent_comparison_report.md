@@ -216,9 +216,14 @@ Testing agent robustness against prompt injection, SQL injection, and other adve
 
 ## Appendix: Result Files
 
-- Main experiments (Keyword, Semantic): `sonnet-4-5_keyword-semantic_main_20251201T224952.json`
-- Integrity tests (Keyword, Semantic): `sonnet-4-5_keyword-semantic_integrity_20251201T234920.json`
-- ReAct main experiments: `sonnet-4-5_react_main_20251202T003637.json`
-- ReAct integrity: `sonnet-4-5_react_integrity_20251202T012417.json`
-- ReAct V2 main experiments: `sonnet-4-5_react-v2_main_20251202T015344.json`
-- ReAct V2 integrity: `sonnet-4-5_react-v2_integrity_20251202T082708.json`
+Results are organized in subfolders by experiment type:
+
+**Main Experiments** (`experiments/results/main/`):
+- Keyword + Semantic: `sonnet-4-5_keyword-semantic_main_20251201T224952.json`
+- ReAct: `sonnet-4-5_react_main_20251202T003637.json`
+- ReAct V2: `sonnet-4-5_react-v2_main_20251202T015344.json`
+
+**Integrity Tests** (`experiments/results/integrity/`):
+- Keyword + Semantic: `sonnet-4-5_keyword-semantic_integrity_20251201T234920.json`
+- ReAct: `sonnet-4-5_react_integrity_20251202T012417.json`
+- ReAct V2: `sonnet-4-5_react-v2_integrity_20251202T082708.json`

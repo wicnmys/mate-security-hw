@@ -6,18 +6,80 @@ import json
 import time
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Optional
 
 from tqdm import tqdm
 
 from src.agents.base import BaseAgent
 from src.constants import DEFAULT_LLM_MODEL, DEFAULT_TOP_K_TABLES, DEFAULT_EMBEDDING_MODEL
-from experiments.utils.llm_judge import LLMJudge
+from experiments.judges import BaseJudge, CorrectnessJudge, CategoricalJudge, IntegrityJudge
+from experiments.configs import get_experiment_config, list_experiment_types, ExperimentConfig
 from experiments.utils.metrics import (
     calculate_retrieval_precision,
     extract_tables_from_sql,
     calculate_aggregate_metrics
 )
+
+
+# Judge registry
+JUDGE_REGISTRY = {
+    "correctness": CorrectnessJudge,
+    "categorical": CategoricalJudge,
+    "integrity": IntegrityJudge,
+}
+
+
+def create_judge(judge_type: str, model: str) -> BaseJudge:
+    """Create a judge instance of the specified type.
+
+    Args:
+        judge_type: Type of judge (correctness, categorical, integrity)
+        model: LLM model to use for evaluation
+
+    Returns:
+        Judge instance
+
+    Raises:
+        ValueError: If judge_type is not recognized
+    """
+    if judge_type not in JUDGE_REGISTRY:
+        valid_types = ", ".join(JUDGE_REGISTRY.keys())
+        raise ValueError(f"Unknown judge type: {judge_type}. Valid types: {valid_types}")
+    return JUDGE_REGISTRY[judge_type](model=model)
+
+
+def generate_output_filename(
+    model: str,
+    agents: List[str],
+    judge_identifier: str,
+    experiment_type: str
+) -> str:
+    """Generate standardized output filename.
+
+    Format: {model}_{agents}_{judge_id}_{timestamp}.json
+
+    Args:
+        model: LLM model name (will be sanitized)
+        agents: List of agent names
+        judge_identifier: Judge identifier (e.g., "claude-sonnet-4-5_correctness_v1")
+        experiment_type: Type of experiment (main, integrity, etc.)
+
+    Returns:
+        Filename string
+    """
+    # Sanitize model name (remove special chars)
+    model_short = model.replace("claude-", "").replace("-", "_")
+
+    # Join agent names
+    agents_str = "-".join(sorted(agents))
+
+    # Extract just the judge type from identifier
+    judge_type = judge_identifier.split("_")[-2] if "_" in judge_identifier else judge_identifier
+
+    # Timestamp
+    timestamp = datetime.now().strftime("%Y%m%dT%H%M%S")
+
+    return f"{model_short}_{agents_str}_{judge_type}_{timestamp}.json"
 
 
 class ExperimentRunner:
@@ -28,7 +90,11 @@ class ExperimentRunner:
         test_cases_path: str,
         agents: Dict[str, BaseAgent],
         agent_configs: Dict[str, Dict[str, Any]] = None,
-        judge_model: str = "claude-sonnet-4-5"
+        judge: BaseJudge = None,
+        judge_type: str = "correctness",
+        judge_model: str = "claude-sonnet-4-5",
+        limit: int = None,
+        experiment_type: str = "main"
     ):
         """
         Initialize experiment runner.
@@ -39,16 +105,32 @@ class ExperimentRunner:
                    e.g., {'keyword': KeywordAgent(...), 'semantic': SemanticAgent(...)}
             agent_configs: Dictionary mapping agent names to their configurations
                    e.g., {'keyword_v1': {'type': 'keyword', 'llm_model': 'claude-sonnet-4-5', ...}}
-            judge_model: LLM model to use for correctness evaluation
+            judge: Pre-configured judge instance (takes precedence over judge_type/judge_model)
+            judge_type: Type of judge to use (correctness, categorical, integrity)
+            judge_model: LLM model to use for evaluation
+            limit: Optional limit on number of test cases to run (for testing)
+            experiment_type: Type of experiment (main, integrity, consistency)
         """
         self.test_cases = self._load_test_cases(test_cases_path)
+
+        # Apply limit if specified
+        if limit is not None:
+            self.test_cases = self.test_cases[:limit]
+
         self.agents = agents
         self.agent_configs = agent_configs or {}
-        self.judge = LLMJudge(model=judge_model)
+        self.experiment_type = experiment_type
 
-        print(f"✅ Loaded {len(self.test_cases)} test cases")
+        # Create or use provided judge
+        if judge is not None:
+            self.judge = judge
+        else:
+            self.judge = create_judge(judge_type, judge_model)
+
+        limit_msg = f" (limited to {limit})" if limit else ""
+        print(f"✅ Loaded {len(self.test_cases)} test cases{limit_msg}")
         print(f"✅ Running experiments with {len(agents)} agents: {', '.join(agents.keys())}")
-        print(f"✅ Using {judge_model} for correctness evaluation\n")
+        print(f"✅ Using judge: {self.judge.identifier}\n")
 
     def _load_test_cases(self, path: str) -> List[Dict[str, Any]]:
         """Load test cases from JSON file."""
@@ -116,11 +198,14 @@ class ExperimentRunner:
 
         generated_sql = response.get('query', '')
 
-        # Evaluate correctness with LLM judge
-        correctness_eval = self.judge.evaluate_correctness(
+        # Evaluate with judge (supports different judge types)
+        judge_eval = self.judge.evaluate(
             question=question,
             reference_sql=reference_sql,
-            generated_sql=generated_sql or ''
+            generated_sql=generated_sql or '',
+            # Additional context for integrity judge
+            expected_behavior=test_case.get('expected_behavior'),
+            integrity_type=test_case.get('integrity_type')
         )
 
         # Calculate retrieval precision
@@ -143,7 +228,8 @@ class ExperimentRunner:
         output_text = generated_sql or ''
         total_tokens = self._count_tokens(input_text) + self._count_tokens(output_text)
 
-        return {
+        # Build result with judge-specific fields
+        result = {
             'agent': agent_name,
             'test_case_id': test_case.get('id', 'unknown'),
             'question': question,
@@ -151,9 +237,6 @@ class ExperimentRunner:
             'generated_sql': generated_sql,
             'agent_explanation': response.get('explanation', ''),
             'agent_reasoning_steps': response.get('reasoning_steps', []),
-            'correctness_score': correctness_eval['score'],
-            'correctness_reasoning': correctness_eval['reasoning'],
-            'correctness_issues': correctness_eval['issues'],
             'latency_ms': latency_ms,
             'total_tokens': total_tokens,
             'retrieval_precision': retrieval_precision,
@@ -163,8 +246,27 @@ class ExperimentRunner:
             'category': test_case.get('category', 'unknown'),
             'integrity_type': test_case.get('integrity_type'),
             'expected_behavior': test_case.get('expected_behavior'),
-            'confidence': response.get('confidence', 0.0)
+            'confidence': response.get('confidence', 0.0),
+            'judge_type': self.judge.judge_id,
+            'judge_identifier': self.judge.identifier,
         }
+
+        # Add judge-specific evaluation fields
+        # Correctness judge: score (0.0-1.0), reasoning, issues
+        # Categorical judge: score (1-5), category, reasoning, issues
+        # Integrity judge: passed, confidence, reasoning, issues
+        result['judge_evaluation'] = judge_eval
+
+        # For backward compatibility and easy access, add common fields
+        if 'score' in judge_eval:
+            result['correctness_score'] = judge_eval['score']
+        elif 'passed' in judge_eval:
+            # Convert integrity pass/fail to score for aggregation
+            result['correctness_score'] = 1.0 if judge_eval['passed'] else 0.0
+        result['correctness_reasoning'] = judge_eval.get('reasoning', '')
+        result['correctness_issues'] = judge_eval.get('issues', [])
+
+        return result
 
     def run_all_experiments(self) -> Dict[str, Any]:
         """
@@ -251,11 +353,16 @@ class ExperimentRunner:
         experiment_results = {
             'metadata': {
                 'timestamp': datetime.now().isoformat(),
+                'experiment_type': self.experiment_type,
                 'agents': self.agent_configs if self.agent_configs else {
                     name: {'type': name} for name in self.agents.keys()
                 },
                 'total_test_cases': len(self.test_cases),
-                'judge_model': self.judge.model_name
+                'judge': {
+                    'type': self.judge.judge_id,
+                    'model': self.judge.model_name,
+                    'identifier': self.judge.identifier
+                }
             },
             'results': all_results,
             'summary': self._generate_summary(all_results)
@@ -314,9 +421,15 @@ def main():
     """Main entry point."""
     parser = argparse.ArgumentParser(description="Run SQL agent experiments")
     parser.add_argument(
+        "--experiment-type",
+        default="main",
+        choices=list_experiment_types(),
+        help="Type of experiment to run (determines test cases and default judge)"
+    )
+    parser.add_argument(
         "--test-cases",
-        default="experiments/test_cases/generated_test_cases.json",
-        help="Path to generated test cases"
+        default=None,
+        help="Path to test cases (overrides experiment type default)"
     )
     parser.add_argument(
         "--schema-path",
@@ -331,14 +444,20 @@ def main():
         help="Which agents to run experiments on"
     )
     parser.add_argument(
-        "--output",
-        default="experiments/results/experiment_results.json",
-        help="Output path for results"
+        "--judge",
+        default=None,
+        choices=list(JUDGE_REGISTRY.keys()),
+        help="Judge type (overrides experiment type default)"
     )
     parser.add_argument(
         "--judge-model",
         default="claude-sonnet-4-5",
-        help="LLM model for correctness evaluation"
+        help="LLM model for judge evaluation"
+    )
+    parser.add_argument(
+        "--output",
+        default=None,
+        help="Output path (auto-generated if not specified)"
     )
     parser.add_argument(
         "--top-k",
@@ -346,17 +465,52 @@ def main():
         default=5,
         help="Number of tables to retrieve"
     )
+    parser.add_argument(
+        "--limit",
+        type=int,
+        default=None,
+        help="Limit to first N test cases (for testing)"
+    )
 
     args = parser.parse_args()
+
+    # Get experiment configuration
+    exp_config = get_experiment_config(args.experiment_type)
+
+    # Resolve test cases path (CLI override or experiment default)
+    test_cases_path = args.test_cases or exp_config.test_cases_path
+
+    # Resolve judge type (CLI override or experiment default)
+    judge_type = args.judge or exp_config.default_judge
+
+    # Create judge
+    judge = create_judge(judge_type, args.judge_model)
+
+    # Generate output path if not specified
+    if args.output:
+        output_path = args.output
+    else:
+        output_dir = exp_config.get_output_dir()
+        filename = generate_output_filename(
+            model=args.judge_model,
+            agents=args.agents,
+            judge_identifier=judge.identifier,
+            experiment_type=args.experiment_type
+        )
+        output_path = f"{output_dir}/{filename}"
 
     print("=" * 70)
     print("SQL AGENT EXPERIMENT RUNNER")
     print("=" * 70)
-    print(f"Test Cases: {args.test_cases}")
+    print(f"Experiment Type: {args.experiment_type}")
+    print(f"Test Cases: {test_cases_path}")
     print(f"Schema: {args.schema_path}")
     print(f"Agents: {', '.join(args.agents)}")
-    print(f"Judge Model: {args.judge_model}")
+    print(f"Judge: {judge.identifier}")
     print(f"Top-K Tables: {args.top_k}")
+    print(f"Output: {output_path}")
+    if args.limit:
+        print(f"Limit: {args.limit} test cases")
     print("=" * 70)
 
     # Dynamically import and instantiate requested agents
@@ -432,14 +586,16 @@ def main():
 
     # Run experiments
     runner = ExperimentRunner(
-        test_cases_path=args.test_cases,
+        test_cases_path=test_cases_path,
         agents=agents,
         agent_configs=agent_configs,
-        judge_model=args.judge_model
+        judge=judge,
+        limit=args.limit,
+        experiment_type=args.experiment_type
     )
 
     results = runner.run_all_experiments()
-    runner.save_results(results, args.output)
+    runner.save_results(results, output_path)
 
     # Print final summary
     print("\n📊 FINAL SUMMARY")
@@ -453,7 +609,7 @@ def main():
         print(f"  Retrieval Precision: {overall['avg_retrieval_precision']:.3f}")
 
     print("\n✅ Experiments complete!")
-    print(f"   Results: {args.output}")
+    print(f"   Results: {output_path}")
     print(f"   Next: python experiments/generate_report.py")
 
 
