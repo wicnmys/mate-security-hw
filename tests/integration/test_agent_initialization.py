@@ -5,6 +5,7 @@ import os
 from src.agents.semantic_agent import SemanticAgent
 from src.agents.keyword_agent import KeywordAgent
 from src.agents.react_agent import ReActAgent
+from src.agents.react_agent_v2 import ReActAgentV2
 
 
 @pytest.mark.integration
@@ -53,6 +54,22 @@ class TestAgentInitialization:
         assert agent.retriever is not None
         assert agent.validator is not None
         assert len(agent._tools) == 3  # retrieve_tables, validate_sql, submit_answer
+
+    def test_react_agent_v2_initialization(self, integration_model):
+        """Test ReActAgentV2 initializes with valid caching parameters and judge."""
+        agent = ReActAgentV2(
+            schema_path="schemas/dataset.json",
+            model=integration_model,
+            top_k_tables=5,
+            retrieval_type="semantic",
+            judge_model=integration_model
+        )
+
+        assert agent.agent is not None
+        assert agent.retriever is not None
+        assert agent.validator is not None
+        assert agent._judge_agent is not None
+        assert len(agent._tools) == 4  # retrieve_tables, validate_sql, llm_judge_evaluate, submit_answer
 
 
 @pytest.mark.integration
@@ -126,3 +143,28 @@ class TestAgentQueryGeneration:
         assert 'tables_used' in result
         assert 'confidence' in result
         assert 'reasoning_steps' in result
+
+    def test_react_agent_v2_generates_query(self, integration_model):
+        """Test ReActAgentV2 can generate a query end-to-end using dual validation."""
+        # TODO: Revisit this limitation - as of 2025-12-01, Haiku doesn't support structured outputs (output_format)
+        # Check if newer versions of Haiku support this feature and remove skip if so
+        if 'haiku' in integration_model.lower():
+            pytest.skip(f"Skipping: {integration_model} doesn't support structured outputs")
+
+        agent = ReActAgentV2(
+            schema_path="schemas/dataset.json",
+            model=integration_model,
+            top_k_tables=5,
+            retrieval_type="semantic",
+            judge_model=integration_model
+        )
+
+        result = agent.run("Show me all high severity endpoint events")
+
+        assert 'query' in result
+        assert 'explanation' in result
+        assert 'tables_used' in result
+        assert 'confidence' in result
+        assert 'reasoning_steps' in result
+        # V2-specific: should have judge scores
+        assert 'judge_scores' in result

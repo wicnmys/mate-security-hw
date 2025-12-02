@@ -160,6 +160,8 @@ class ReportGenerator:
                 lines.append("- **Semantic Agent**: Embedding-based semantic similarity retrieval")
             elif agent == "react":
                 lines.append("- **ReAct Agent**: Iterative reasoning + acting with retrieval and validation tools")
+            elif agent == "react_v2":
+                lines.append("- **ReAct Agent V2**: Dual validation with structural + LLM-as-judge semantic evaluation")
             else:
                 lines.append(f"- **{agent.title()} Agent**: Custom retrieval strategy")
 

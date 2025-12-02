@@ -327,7 +327,7 @@ def main():
         "--agents",
         nargs="+",
         default=["keyword", "semantic"],
-        choices=["keyword", "semantic", "react"],
+        choices=["keyword", "semantic", "react", "react_v2"],
         help="Which agents to run experiments on"
     )
     parser.add_argument(
@@ -407,6 +407,25 @@ def main():
             'top_k': args.top_k,
             'schema_path': args.schema_path,
             'retrieval_type': 'semantic'
+        }
+
+    if "react_v2" in args.agents:
+        from src.agents.react_agent_v2 import ReActAgentV2
+        print("🔄 Initializing ReActAgentV2 (with LLM judge)...")
+        agents['react_v2'] = ReActAgentV2(
+            schema_path=args.schema_path,
+            top_k_tables=args.top_k,
+            retrieval_type="semantic",
+            judge_model=DEFAULT_LLM_MODEL
+        )
+        agent_configs['react_v2'] = {
+            'type': 'react_v2',
+            'llm_model': DEFAULT_LLM_MODEL,
+            'embedding_model': DEFAULT_EMBEDDING_MODEL,
+            'top_k': args.top_k,
+            'schema_path': args.schema_path,
+            'retrieval_type': 'semantic',
+            'judge_model': DEFAULT_LLM_MODEL
         }
 
     print()
