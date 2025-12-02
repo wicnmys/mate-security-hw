@@ -13,7 +13,7 @@ import json
 import sys
 from pathlib import Path
 
-from src.agents.semantic_agent import SemanticAgent
+from src.agents.registry import AGENT_REGISTRY, create_agent, get_agent_names
 
 
 def main():
@@ -25,8 +25,9 @@ def main():
 Examples:
   python main.py "Show me all high-severity security events from the last 24 hours"
   python main.py "Which users had the most failed login attempts?" --explain
-  python main.py "Find suspicious file access events" --model gpt-4
+  python main.py "Find suspicious file access events" --agent react
   python main.py "What are the top 10 most common security event types?" --json
+  python main.py "Show network traffic anomalies" --agent react-v2
         """
     )
 
@@ -69,6 +70,14 @@ Examples:
         help="Output result as JSON"
     )
 
+    parser.add_argument(
+        "--agent",
+        type=str,
+        default="semantic",
+        choices=get_agent_names(),
+        help=f"Agent type to use (default: semantic). Options: {', '.join(get_agent_names())}"
+    )
+
     args = parser.parse_args()
 
     # Validate schema path
@@ -78,8 +87,9 @@ Examples:
 
     try:
         # Initialize agent
-        print("Initializing agent...", file=sys.stderr)
-        agent = SemanticAgent(
+        print(f"Initializing {args.agent} agent...", file=sys.stderr)
+        agent = create_agent(
+            name=args.agent,
             schema_path=args.schema_path,
             model=args.model,
             top_k_tables=args.top_k

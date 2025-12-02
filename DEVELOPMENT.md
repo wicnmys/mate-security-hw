@@ -1031,6 +1031,36 @@ Implemented a ReAct (Reasoning + Acting) agent based on the planning document at
 
 ---
 
+---
+
+## Technical Debt
+
+### Judge Registry Lookup (experiments/generate_report.py)
+
+**Issue:** The `get_judge_class()` function uses a brittle string manipulation to look up judge classes:
+
+```python
+def get_judge_class(judge_type: str) -> Type[BaseJudge]:
+    # Strip version suffix (e.g., 'correctness_v1' -> 'correctness')
+    base_type = judge_type.replace('_v1', '').replace('_v2', '')
+    return JUDGE_REGISTRY.get(base_type, CorrectnessJudge)
+```
+
+**Problem:** This doesn't handle versioning properly. If we have `correctness_v2` with different behavior than `correctness_v1`, both would map to the same class.
+
+**Impact:** Low for now (all versions share the same class), but will become problematic if:
+- We add a v2 judge with breaking changes
+- We need to regenerate reports from historical results
+
+**Proposed Fix:**
+1. Store full judge class path in metadata: `{"judge": {"class": "experiments.judges.correctness_judge.CorrectnessJudge"}}`
+2. Use `importlib` to dynamically load the class
+3. Or, maintain separate registry entries: `{'correctness_v1': CorrectnessJudge, 'correctness_v2': CorrectnessJudgeV2}`
+
+**Priority:** Low - address when adding a v2 judge
+
+---
+
 #### Architecture Decision: Tool-Based Iterative Refinement
 
 **Choice:** ReAct pattern with explicit tools vs. multi-agent pipeline or chain-of-thought
@@ -1048,4 +1078,71 @@ Implemented a ReAct (Reasoning + Acting) agent based on the planning document at
 
 ---
 
-*Last Updated: 2025-12-02 - Phase 7 Complete (ReAct agent with tools + integrity tests)*
+---
+
+### CLI Refactor: Agent Selection & Shared Registry
+**Date:** 2025-12-02
+
+#### What We Built
+
+**1. CLI Agent Selection** (`main.py`)
+- ✅ Added `--agent` flag to select agent type at runtime
+- ✅ Supports: `keyword`, `semantic`, `react`, `react-v2`
+- ✅ Default: `semantic` (unchanged behavior)
+
+**2. Shared Agent Registry** (`src/agents/registry.py`)
+- ✅ Centralized `AGENT_REGISTRY` mapping names to classes
+- ✅ `AGENT_DEFAULTS` for agent-specific configuration
+- ✅ `create_agent()` factory function for instantiation
+- ✅ `get_agent_config()` for experiment metadata generation
+- ✅ Single registration point for both CLI and experiments
+
+**3. Experiment Runner Simplification** (`experiments/run_experiments.py`)
+- ✅ Replaced 65 lines of if/else agent initialization with 15-line loop
+- ✅ Uses shared registry for consistent agent creation
+- ✅ Agent choices dynamically derived from registry
+
+#### Usage
+
+```bash
+# CLI with agent selection
+python main.py "Show me failed logins" --agent react
+python main.py "Show me failed logins" --agent react-v2
+python main.py "Show me failed logins" --agent keyword
+
+# Experiments with agent selection
+python experiments/run_experiments.py --agents react react-v2
+```
+
+#### Adding New Agents
+
+Single registration in `src/agents/registry.py`:
+```python
+from src.agents.your_agent import YourAgent
+
+AGENT_REGISTRY = {
+    ...
+    "your-agent": YourAgent,
+}
+
+AGENT_DEFAULTS = {
+    ...
+    "your-agent": {"retrieval_type": "semantic"},
+}
+```
+
+This enables the agent in both CLI and experiments automatically.
+
+#### Files Modified
+1. `main.py` - Added `--agent` flag, uses registry
+2. `experiments/run_experiments.py` - Uses registry, simplified init
+3. `src/agents/registry.py` - New shared registry module
+4. `README.md` - Updated docs for agent selection and registration
+
+#### Test Results
+- ✅ **269 unit tests passing**
+- ✅ CLI and experiments both work with all agent types
+
+---
+
+*Last Updated: 2025-12-02 - CLI agent selection and shared registry*

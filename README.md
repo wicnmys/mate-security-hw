@@ -55,8 +55,11 @@ ANTHROPIC_API_KEY=sk-ant-your-api-key-here
 # Activate virtual environment
 source .venv/bin/activate
 
-# Run a query
+# Run a query (default: semantic agent)
 python main.py "Show me all high severity endpoint events from the last 24 hours"
+
+# Use a specific agent
+python main.py "Which users had the most failed login attempts?" --agent react
 
 # See detailed explanation
 python main.py "Which users had the most failed login attempts?" --explain
@@ -556,6 +559,7 @@ mate-security-hw/
 python main.py [question] [options]
 
 Options:
+  --agent AGENT     Agent type: semantic, keyword, react, react-v2 (default: semantic)
   --explain         Show retrieval process and reasoning
   --json            Output results as JSON
   --model MODEL     LLM model (default: claude-sonnet-4-5)
@@ -601,7 +605,23 @@ See [DEVELOPMENT.md](DEVELOPMENT.md) for:
 2. Implement `__init__` and `run` methods
 3. Add tests in `tests/test_your_agent.py`
 4. Create an agent card in `src/agents/agent_cards/`
-5. Update experiments to include new agent
+5. Register the agent in `src/agents/registry.py`:
+   ```python
+   from src.agents.your_agent import YourAgent
+
+   AGENT_REGISTRY = {
+       ...
+       "your-agent": YourAgent,
+   }
+
+   AGENT_DEFAULTS = {
+       ...
+       "your-agent": {
+           "retrieval_type": "semantic",  # or "keyword"
+       },
+   }
+   ```
+   This single registration enables the agent in both CLI (`main.py`) and experiments.
 
 **Add a new retrieval strategy:**
 1. Create new class in `src/retrieval/`

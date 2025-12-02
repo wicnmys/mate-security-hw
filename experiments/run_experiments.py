@@ -11,6 +11,7 @@ from typing import Dict, Any, List, Optional
 from tqdm import tqdm
 
 from src.agents.base import BaseAgent
+from src.agents.registry import get_agent_names, create_agent, get_agent_config
 from src.constants import DEFAULT_LLM_MODEL, DEFAULT_TOP_K_TABLES, DEFAULT_EMBEDDING_MODEL
 from experiments.judges import BaseJudge, CorrectnessJudge, CategoricalJudge, IntegrityJudge
 from experiments.configs import get_experiment_config, list_experiment_types, ExperimentConfig
@@ -440,7 +441,7 @@ def main():
         "--agents",
         nargs="+",
         default=["keyword", "semantic"],
-        choices=["keyword", "semantic", "react", "react_v2"],
+        choices=get_agent_names(),
         help="Which agents to run experiments on"
     )
     parser.add_argument(
@@ -513,74 +514,26 @@ def main():
         print(f"Limit: {args.limit} test cases")
     print("=" * 70)
 
-    # Dynamically import and instantiate requested agents
+    # Dynamically instantiate requested agents using the registry
     agents = {}
     agent_configs = {}
 
-    if "keyword" in args.agents:
-        from src.agents.keyword_agent import KeywordAgent
-        print("🔄 Initializing KeywordAgent...")
-        agents['keyword'] = KeywordAgent(
-            schema_path=args.schema_path,
-            top_k_tables=args.top_k
-        )
-        agent_configs['keyword'] = {
-            'type': 'keyword',
-            'llm_model': DEFAULT_LLM_MODEL,
-            'top_k': args.top_k,
-            'schema_path': args.schema_path
-        }
-
-    if "semantic" in args.agents:
-        from src.agents.semantic_agent import SemanticAgent
-        print("🔄 Initializing SemanticAgent...")
-        agents['semantic'] = SemanticAgent(
-            schema_path=args.schema_path,
-            top_k_tables=args.top_k
-        )
-        agent_configs['semantic'] = {
-            'type': 'semantic',
-            'llm_model': DEFAULT_LLM_MODEL,
-            'embedding_model': DEFAULT_EMBEDDING_MODEL,
-            'top_k': args.top_k,
-            'schema_path': args.schema_path
-        }
-
-    if "react" in args.agents:
-        from src.agents.react_agent import ReActAgent
-        print("🔄 Initializing ReActAgent...")
-        agents['react'] = ReActAgent(
+    for agent_name in args.agents:
+        print(f"🔄 Initializing {agent_name} agent...")
+        agents[agent_name] = create_agent(
+            name=agent_name,
             schema_path=args.schema_path,
             top_k_tables=args.top_k,
-            retrieval_type="semantic"
+            judge_model=DEFAULT_LLM_MODEL if agent_name == "react-v2" else None,
         )
-        agent_configs['react'] = {
-            'type': 'react',
-            'llm_model': DEFAULT_LLM_MODEL,
-            'embedding_model': DEFAULT_EMBEDDING_MODEL,
-            'top_k': args.top_k,
-            'schema_path': args.schema_path,
-            'retrieval_type': 'semantic'
-        }
-
-    if "react_v2" in args.agents:
-        from src.agents.react_agent_v2 import ReActAgentV2
-        print("🔄 Initializing ReActAgentV2 (with LLM judge)...")
-        agents['react_v2'] = ReActAgentV2(
+        agent_configs[agent_name] = get_agent_config(
+            name=agent_name,
             schema_path=args.schema_path,
-            top_k_tables=args.top_k,
-            retrieval_type="semantic",
-            judge_model=DEFAULT_LLM_MODEL
+            top_k=args.top_k,
+            llm_model=DEFAULT_LLM_MODEL,
+            embedding_model=DEFAULT_EMBEDDING_MODEL,
+            judge_model=DEFAULT_LLM_MODEL if agent_name == "react-v2" else None,
         )
-        agent_configs['react_v2'] = {
-            'type': 'react_v2',
-            'llm_model': DEFAULT_LLM_MODEL,
-            'embedding_model': DEFAULT_EMBEDDING_MODEL,
-            'top_k': args.top_k,
-            'schema_path': args.schema_path,
-            'retrieval_type': 'semantic',
-            'judge_model': DEFAULT_LLM_MODEL
-        }
 
     print()
 
