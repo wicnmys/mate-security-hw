@@ -475,16 +475,13 @@ mate-security-hw/
 │   ├── constants.py             # Configuration constants
 │   ├── agents/
 │   │   ├── base.py              # Abstract base agent
+│   │   ├── registry.py          # Agent registry for CLI and experiments
 │   │   ├── sql_agent.py         # Core SQL agent with pluggable retrieval
 │   │   ├── keyword_agent.py     # Keyword-based retrieval agent
 │   │   ├── semantic_agent.py    # Semantic retrieval agent
 │   │   ├── react_agent.py       # ReAct agent with tool-use loop
 │   │   ├── react_agent_v2.py    # Enhanced ReAct with LLM judge
 │   │   └── agent_cards/         # Agent documentation
-│   │       ├── keyword_agent.md
-│   │       ├── semantic_agent.md
-│   │       ├── react_agent.md
-│   │       └── react_agent_v2.md
 │   ├── retrieval/
 │   │   ├── semantic_retrieval.py  # Embedding-based retrieval
 │   │   └── keyword_retrieval.py   # Keyword-based retrieval
@@ -492,23 +489,21 @@ mate-security-hw/
 │       ├── schema_loader.py     # Load and format schemas
 │       └── validator.py         # SQL validation
 ├── tests/
-│   ├── test_*.py               # Unit tests
-│   └── integration/            # Integration tests
-│       ├── test_agent_initialization.py
-│       ├── test_llm_judge.py
-│       ├── test_caching_parameters.py
-│       └── test_run_experiments.py
+│   ├── test_*.py               # Unit tests (~270 tests)
+│   └── integration/            # Integration tests (~13 tests)
 ├── experiments/
 │   ├── configs/                 # Experiment configurations
-│   │   └── experiment_config.py
 │   ├── judges/                  # LLM judge implementations
-│   │   ├── base.py
 │   │   ├── correctness_judge.py
 │   │   ├── categorical_judge.py
 │   │   └── integrity_judge.py
 │   ├── utils/
 │   │   ├── metrics.py          # Correctness, precision, latency
 │   │   └── llm_judge.py        # LLM-as-judge evaluation
+│   ├── planning/               # Experiment planning docs
+│   ├── reports/                # Generated comparison reports
+│   ├── results/                # Experiment result JSON files
+│   ├── test_cases/             # Generated test case sets
 │   ├── generate_test_cases.py
 │   ├── run_experiments.py
 │   ├── rejudge.py              # Re-evaluate existing results
@@ -516,11 +511,15 @@ mate-security-hw/
 │   └── README.md
 ├── schemas/
 │   └── dataset.json            # 20-table security schema
+├── submission/                  # Grading deliverables
+│   ├── assignment.md           # Original assignment
+│   ├── checklist.md            # QA checklist
+│   ├── code-review.md          # Code review notes
+│   └── DEVELOPMENT.md          # Development log
 ├── main.py                     # CLI entrypoint
 ├── setup.sh                    # One-command setup
 ├── requirements.txt            # Production dependencies
-├── requirements-dev.txt        # Dev + test dependencies
-└── DEVELOPMENT.md              # Detailed development log
+└── requirements-dev.txt        # Dev + test dependencies
 ```
 
 ## Key Features
